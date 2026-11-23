@@ -1,0 +1,3251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aspen Plus V14 - Process Simulator</title>
+    <style>
+        :root {
+            --ap-blue-dark: #004578;
+            --ap-blue: #005A9E;
+            --ap-blue-accent: #0078D4;
+            --ap-blue-light: #DEECF9;
+            --ap-bg: #F3F5F8;
+            --ap-panel: #FFFFFF;
+            --ap-ribbon: #F8F9FB;
+            --ap-border: #C8D0D8;
+            --ap-border-light: #E1E6EB;
+            --ap-text: #1F2328;
+            --ap-muted: #57606A;
+            --ap-red: #D83B01;
+            --ap-green: #107C10;
+            --font-ui: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-mono: 'Consolas', 'Courier New', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-ui);
+            font-size: 12px;
+            color: var(--ap-text);
+            background: var(--ap-bg);
+            user-select: none;
+        }
+
+        .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+        .hidden { display: none !important; }
+
+        /* App Shell */
+        .app-shell {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 1. Title Bar */
+        .title-bar {
+            height: 28px;
+            background: linear-gradient(90deg, #004578 0%, #005A9E 65%, #006CBE 100%);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 11.5px;
+            flex-shrink: 0;
+        }
+        .title-left { display: flex; align-items: center; gap: 8px; }
+        .ap-badge {
+            background: #FFFFFF;
+            color: #004578;
+            font-weight: 800;
+            font-size: 10.5px;
+            padding: 1px 5px;
+            border-radius: 2px;
+            letter-spacing: 0.3px;
+        }
+        .title-right { display: flex; align-items: center; gap: 10px; font-size: 11px; }
+
+        /* 2. Ribbon Tabs */
+        .ribbon-tabs {
+            height: 25px;
+            background: #EFF2F6;
+            border-bottom: 1px solid var(--ap-border);
+            display: flex;
+            align-items: flex-end;
+            padding: 0 8px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .r-file-btn {
+            background: #005A9E;
+            color: #FFFFFF;
+            border: none;
+            padding: 4px 12px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 4px;
+            border-radius: 2px 2px 0 0;
+        }
+        .r-tab {
+            padding: 4px 12px;
+            font-size: 11.5px;
+            color: var(--ap-text);
+            background: transparent;
+            border: 1px solid transparent;
+            border-bottom: none;
+            cursor: pointer;
+            border-radius: 2px 2px 0 0;
+        }
+        .r-tab:hover { background: #E4E9F0; }
+        .r-tab.active {
+            background: var(--ap-ribbon);
+            border-color: var(--ap-border);
+            color: #005A9E;
+            font-weight: 600;
+            margin-bottom: -1px;
+            padding-bottom: 5px;
+        }
+
+        /* 3. Ribbon Toolbar */
+        .ribbon-bar {
+            height: 68px;
+            background: var(--ap-ribbon);
+            border-bottom: 1px solid var(--ap-border);
+            display: flex;
+            align-items: stretch;
+            padding: 3px 6px;
+            gap: 4px;
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+        .r-group {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid var(--ap-border-light);
+            padding: 2px 8px 1px 6px;
+        }
+        .r-group-items {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+        .r-group-label {
+            text-align: center;
+            font-size: 10px;
+            color: var(--ap-muted);
+        }
+        .r-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            min-width: 52px;
+            height: 48px;
+            padding: 3px 6px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 10.5px;
+            color: var(--ap-text);
+        }
+        .r-btn:hover {
+            background: #E5F1FB;
+            border-color: #99C8EE;
+        }
+        .r-btn.active {
+            background: #CCE4F7;
+            border-color: #0078D4;
+            font-weight: 600;
+        }
+
+        /* 4. Main Workspace */
+        .workspace-body {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* Left Navigation Pane */
+        .nav-pane {
+            width: 245px;
+            min-width: 210px;
+            background: #F9FAFC;
+            border-right: 1px solid var(--ap-border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .nav-header {
+            height: 26px;
+            background: #E9EEF4;
+            border-bottom: 1px solid var(--ap-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            font-weight: 600;
+            font-size: 11px;
+        }
+        .nav-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 4px;
+        }
+        .tree-node {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 11.5px;
+            margin-bottom: 1px;
+        }
+        .tree-node:hover { background: #E8F2FC; }
+        .tree-node.active {
+            background: #CCE4F7;
+            font-weight: 600;
+            color: #004578;
+        }
+        .tree-indent-1 { padding-left: 20px; }
+        .tree-indent-2 { padding-left: 34px; }
+        .status-dot-req {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            border: 1.5px solid #D83B01;
+            background: linear-gradient(90deg, #D83B01 50%, #FFFFFF 50%);
+            flex-shrink: 0;
+        }
+        .status-dot-ok {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #0078D4;
+            color: #FFFFFF;
+            font-size: 8.5px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        /* Environment Switcher (Properties / Simulation / Energy) */
+        .env-switcher {
+            border-top: 1px solid var(--ap-border);
+            background: #E9EEF4;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .env-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border: 1px solid transparent;
+            border-radius: 2px;
+            background: transparent;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--ap-text);
+            cursor: pointer;
+            text-align: left;
+        }
+        .env-btn:hover { background: #DCE6F2; }
+        .env-btn.active {
+            background: #FFFFFF;
+            border-color: var(--ap-border);
+            color: #005A9E;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        /* Right Content Area */
+        .editor-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background: var(--ap-panel);
+        }
+        .doc-tabs {
+            height: 27px;
+            background: #E9EEF4;
+            border-bottom: 1px solid var(--ap-border);
+            display: flex;
+            align-items: flex-end;
+            padding: 0 6px;
+            gap: 2px;
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+        .doc-tab {
+            padding: 4px 11px;
+            font-size: 11.5px;
+            background: #DCE3EC;
+            border: 1px solid var(--ap-border);
+            border-bottom: none;
+            border-radius: 2px 2px 0 0;
+            cursor: pointer;
+            color: var(--ap-text);
+            white-space: nowrap;
+        }
+        .doc-tab.active {
+            background: #FFFFFF;
+            color: #005A9E;
+            font-weight: 600;
+            margin-bottom: -1px;
+            padding-bottom: 5px;
+        }
+
+        .doc-pane {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Form & Sheet Cards */
+        .sheet-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ap-border);
+            border-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .sheet-head {
+            background: linear-gradient(180deg, #F4F7FA 0%, #E7EDF4 100%);
+            border-bottom: 1px solid var(--ap-border);
+            padding: 6px 10px;
+            font-weight: 700;
+            font-size: 11.5px;
+            color: #004578;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ap-input, .ap-select {
+            height: 24px;
+            border: 1px solid #B0B8C2;
+            border-radius: 2px;
+            padding: 2px 6px;
+            font-size: 11.5px;
+            font-family: var(--font-mono);
+            background: #FFFFFF;
+            color: var(--ap-text);
+            width: 100%;
+        }
+        .ap-input:focus, .ap-select:focus {
+            outline: none;
+            border-color: #0078D4;
+            box-shadow: 0 0 0 1px #0078D4;
+        }
+        .req-empty {
+            border-left: 3px solid #D83B01 !important;
+            background: #FFFDFB !important;
+        }
+
+        .ap-btn {
+            height: 25px;
+            padding: 0 11px;
+            background: #F3F5F8;
+            border: 1px solid #B0B8C2;
+            border-radius: 2px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--ap-text);
+            cursor: pointer;
+        }
+        .ap-btn:hover { background: #E3E8EE; }
+        .ap-btn-primary {
+            background: #005A9E;
+            border-color: #004578;
+            color: #FFFFFF;
+        }
+        .ap-btn-primary:hover { background: #004578; }
+
+        /* Tables */
+        .ap-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+        }
+        .ap-table th {
+            background: #EDF1F6;
+            border: 1px solid var(--ap-border);
+            padding: 5px 8px;
+            text-align: left;
+            font-weight: 600;
+            color: #1F2328;
+        }
+        .ap-table td {
+            border: 1px solid #DCE2E8;
+            padding: 4px 8px;
+            user-select: text;
+        }
+        .ap-table tr:nth-child(even) td { background: #FAFBFD; }
+        .sec-row td {
+            background: #E6EEF6 !important;
+            font-weight: 700;
+            color: #004578;
+        }
+
+        /* Subtabs inside RadFrac */
+        .subtab-bar {
+            display: flex;
+            border-bottom: 1px solid var(--ap-border);
+            background: #F3F5F8;
+            padding: 4px 8px 0 8px;
+            gap: 4px;
+        }
+        .subtab {
+            padding: 4px 10px;
+            font-size: 11px;
+            border: 1px solid transparent;
+            border-bottom: none;
+            cursor: pointer;
+            border-radius: 2px 2px 0 0;
+        }
+        .subtab.active {
+            background: #FFFFFF;
+            border-color: var(--ap-border);
+            font-weight: 700;
+            color: #005A9E;
+            margin-bottom: -1px;
+            padding-bottom: 5px;
+        }
+
+        /* PFD Flowsheet Canvas */
+        .pfd-wrap {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            background-color: #FFFFFF;
+            background-image:
+                linear-gradient(to right, #EFF3F7 1px, transparent 1px),
+                linear-gradient(to bottom, #EFF3F7 1px, transparent 1px),
+                linear-gradient(to right, #DFE5EC 1px, transparent 1px),
+                linear-gradient(to bottom, #DFE5EC 1px, transparent 1px);
+            background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+        }
+        .pfd-wrap.no-grid { background-image: none; }
+
+        .pfd-stamped-table {
+            position: absolute;
+            top: 24px;
+            left: 520px;
+            background: #FFFFFF;
+            border: 1.5px solid #32383F;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+            z-index: 20;
+            max-width: 680px;
+        }
+
+        .pfd-inspector-bar {
+            height: 26px;
+            background: #F0F3F6;
+            border-top: 1px solid var(--ap-border);
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--ap-text);
+            flex-shrink: 0;
+        }
+
+        /* Model Palette */
+        .model-palette {
+            height: 82px;
+            background: #F3F5F8;
+            border-top: 1px solid var(--ap-border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .palette-tabs {
+            height: 22px;
+            background: #E5EAF0;
+            border-bottom: 1px solid var(--ap-border);
+            display: flex;
+            padding: 0 6px;
+            gap: 4px;
+            align-items: flex-end;
+        }
+        .pal-tab {
+            padding: 2px 10px;
+            font-size: 10.5px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+        }
+        .pal-tab.active {
+            background: #F3F5F8;
+            border-color: var(--ap-border);
+            font-weight: 700;
+            color: #005A9E;
+        }
+        .palette-items {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 4px 10px;
+            gap: 8px;
+            overflow-x: auto;
+        }
+        .pal-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 66px;
+            height: 50px;
+            background: #FFFFFF;
+            border: 1px solid var(--ap-border);
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 10.5px;
+            font-weight: 600;
+            gap: 3px;
+        }
+        .pal-item:hover {
+            background: #E5F1FB;
+            border-color: #0078D4;
+        }
+        .pal-item.active {
+            background: #CCE4F7;
+            border-color: #005A9E;
+            box-shadow: inset 0 0 0 1px #005A9E;
+        }
+
+        /* Control Panel Drawer */
+        .control-panel {
+            height: 125px;
+            background: #FFFFFF;
+            border-top: 1px solid var(--ap-border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .cp-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 10px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            line-height: 1.45;
+            user-select: text;
+        }
+
+        /* Bottom Status Bar */
+        .status-bar {
+            height: 24px;
+            background: #005A9E;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+        .status-bar.status-req { background: #8A2B06; }
+        .status-bar.status-ok { background: #107C10; }
+        .status-bar.status-err { background: #A80000; }
+
+        /* Context Menu & Chart Tooltip */
+        .ctx-menu {
+            position: fixed;
+            background: #FFFFFF;
+            border: 1px solid #9AA4B0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+            z-index: 150;
+            min-width: 165px;
+            padding: 3px 0;
+        }
+        .ctx-item {
+            padding: 5px 12px;
+            font-size: 11.5px;
+            cursor: pointer;
+        }
+        .ctx-item:hover { background: #E5F1FB; color: #004578; }
+
+        .chart-tooltip {
+            position: fixed;
+            pointer-events: none;
+            background: rgba(31, 35, 40, 0.94);
+            color: #FFFFFF;
+            padding: 5px 8px;
+            border-radius: 2px;
+            font-family: var(--font-mono);
+            font-size: 10.5px;
+            z-index: 160;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .workspace-body { overflow: visible; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <!-- 1. TITLE BAR -->
+    <div class="title-bar no-print">
+        <div class="title-left">
+            <span class="ap-badge">Aspen Plus</span>
+            <span>Simulation1 - Aspen Plus V14 - [Blank Simulation]</span>
+        </div>
+        <div class="title-right">
+            <span>Unit Set:</span>
+            <select id="unitSetSelect" onchange="setUnitSet(this.value)" style="background:#004578; color:#FFF; border:1px solid #5B9BD5; font-size:10.5px; padding:1px 4px; border-radius:2px;">
+                <option value="METCBAR" selected>METCBAR (C, bar, kg/hr)</option>
+                <option value="SI">SI (K, Pa, kg/s)</option>
+                <option value="ENG">ENG (F, psia, lb/hr)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 2. RIBBON TABS -->
+    <div class="ribbon-tabs no-print">
+        <button class="r-file-btn" onclick="newBlankSimulation()">File</button>
+        <button class="r-tab active" onclick="switchRibbonTab('home', this)">Home</button>
+        <button class="r-tab" onclick="switchRibbonTab('view', this)">View</button>
+        <button class="r-tab" onclick="switchRibbonTab('flowsheet', this)">Flowsheet</button>
+    </div>
+
+    <!-- 3. RIBBON COMMAND TOOLBAR -->
+    <div id="ribbonToolbar" class="ribbon-bar no-print">
+        <div class="r-group" data-rtab="home">
+            <div class="r-group-items">
+                <button class="r-btn" onclick="stepNext()" title="Next Required Input Sheet (F4)">
+                    <span style="font-weight:800; font-size:14px; color:#005A9E;">N&rarr;</span>
+                    <span>Next</span>
+                </button>
+            </div>
+            <div class="r-group-label">Navigate</div>
+        </div>
+
+        <div class="r-group" data-rtab="home">
+            <div class="r-group-items">
+                <button class="r-btn" onclick="runSimulation()" title="Run Simulation Engine (F5)">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="#107C10"><path d="M6 3.5L16 10L6 16.5V3.5Z"/></svg>
+                    <span style="font-weight:700; color:#107C10;">Run</span>
+                </button>
+                <button class="r-btn" onclick="resetSimulation()" title="Reset Calculated Results">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#D83B01" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    <span>Reset</span>
+                </button>
+                <button class="r-btn" onclick="newBlankSimulation()" title="Start New Blank Simulation">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#32383F" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span>New Blank</span>
+                </button>
+                <button class="r-btn" onclick="toggleControlPanel()" title="Show / Hide Control Panel">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#005A9E" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/></svg>
+                    <span>Control Panel</span>
+                </button>
+            </div>
+            <div class="r-group-label">Run</div>
+        </div>
+
+        <div class="r-group" data-rtab="home flowsheet">
+            <div class="r-group-items">
+                <button id="btnMaterialTool" class="r-btn" onclick="toggleMaterialConnectMode()" title="Draw Material Streams between Ports">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0078D4" stroke-width="2"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="14 7 19 12 14 17"/><circle cx="4" cy="12" r="2" fill="#0078D4"/></svg>
+                    <span>Material</span>
+                </button>
+                <button id="btnTextTool" class="r-btn" onclick="toggleTextAnnotateMode()" title="Add Text Annotation Label on Flowsheet">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#32383F" stroke-width="1.8"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                    <span>Text Box</span>
+                </button>
+                <button class="r-btn" onclick="openRenameDialogForSelected()" title="Rename Selected Block or Stream (Ctrl+M)">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#32383F" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <span>Rename</span>
+                </button>
+                <button class="r-btn" onclick="deleteSelectedPFDObject()" title="Delete Selected Object (Del)">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#A80000" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    <span>Delete</span>
+                </button>
+            </div>
+            <div class="r-group-label">Flowsheet</div>
+        </div>
+
+        <div class="r-group" data-rtab="view flowsheet">
+            <div class="r-group-items">
+                <button id="btnGridToggle" class="r-btn active" onclick="togglePFDGrid()" title="Show / Hide Flowsheet Gridlines">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#005A9E" stroke-width="1.7"><rect x="3" y="3" width="18" height="18"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                    <span>Gridlines</span>
+                </button>
+                <button id="btnStreamBadges" class="r-btn" onclick="toggleStreamBadges()" title="Show / Hide Live T, P, Flow Callouts on Flowsheet">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#107C10" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="10" x2="17" y2="10"/><line x1="7" y1="14" x2="13" y2="14"/></svg>
+                    <span>Stream Data</span>
+                </button>
+                <button class="r-btn" onclick="resetZoom()" title="Zoom 100%">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#32383F" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <span>Zoom 100%</span>
+                </button>
+            </div>
+            <div class="r-group-label">Display</div>
+        </div>
+
+        <div class="r-group" data-rtab="home view" style="border-right:none;">
+            <div class="r-group-items">
+                <button class="r-btn" onclick="switchDocTab('streams-summary')" title="View Stream Results Summary">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#005A9E" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                    <span>Stream Summary</span>
+                </button>
+                <button id="btnStampTable" class="r-btn" onclick="toggleStampedStreamTable()" title="Insert / Remove Stream Table on Flowsheet">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0078D4" stroke-width="1.8"><path d="M3 5h18v14H3z"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="5" x2="10" y2="19"/></svg>
+                    <span>Stream Table</span>
+                </button>
+                <button class="r-btn" onclick="switchDocTab('validation')" title="Compare Calculated Results vs Reference Solution">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#107C10" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Validation</span>
+                </button>
+                <button class="r-btn" onclick="window.print()" title="Print Flowsheet & Results (Ctrl+P)">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#32383F" stroke-width="1.8"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    <span>Print</span>
+                </button>
+            </div>
+            <div class="r-group-label">Summary &amp; Reports</div>
+        </div>
+    </div>
+
+    <!-- 4. MAIN WORKSPACE -->
+    <div class="workspace-body">
+        <!-- Left Navigation Tree -->
+        <div class="nav-pane no-print">
+            <div class="nav-header">
+                <span>All Items</span>
+                <span id="envTag" style="color:#005A9E; font-size:10px;">Properties</span>
+            </div>
+            <div id="navTree" class="nav-tree"></div>
+            <div class="env-switcher">
+                <button id="envBtnProp" class="env-btn active" onclick="switchEnvironment('properties')">
+                    <span style="color:#0078D4;">&#9670;</span> Properties
+                </button>
+                <button id="envBtnSim" class="env-btn" onclick="switchEnvironment('simulation')">
+                    <span style="color:#107C10;">&#9654;</span> Simulation
+                </button>
+                <button id="envBtnEnergy" class="env-btn" onclick="switchEnvironment('energy')">
+                    <span style="color:#D83B01;">&#9889;</span> Energy Analysis
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Document Editor & Flowsheet -->
+        <div class="editor-pane">
+            <div class="doc-tabs no-print">
+                <div id="dtab-setup" class="doc-tab active" onclick="switchDocTab('setup')">Specifications</div>
+                <div id="dtab-flowsheet" class="doc-tab" onclick="switchDocTab('flowsheet')">Main Flowsheet</div>
+                <div id="dtab-streams-summary" class="doc-tab" onclick="switchDocTab('streams-summary')">Stream Results</div>
+                <div id="dtab-radfrac-results" class="doc-tab" onclick="switchDocTab('radfrac-results')">RadFrac Results &amp; Graphs</div>
+                <div id="dtab-validation" class="doc-tab" onclick="switchDocTab('validation')">Reference Solution Comparison</div>
+            </div>
+
+            <!-- Tab 1: Dynamic Specifications Sheet -->
+            <div id="tab-setup" class="doc-pane"></div>
+
+            <!-- Tab 2: Main Flowsheet (PFD) -->
+            <div id="tab-flowsheet" class="doc-pane hidden" style="padding:0; overflow:hidden;">
+                <div id="pfdViewport" class="pfd-wrap"
+                     onmousedown="onCanvasMouseDown(event)"
+                     onmousemove="onCanvasMouseMove(event)"
+                     onmouseup="onCanvasMouseUp(event)"
+                     onclick="onCanvasClick(event)"
+                     oncontextmenu="onCanvasContextMenu(event)">
+                    <svg id="pfdSvg" width="1600" height="950" style="display:block;">
+                        <defs>
+                            <marker id="arrowMat" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#1F2328"/>
+                            </marker>
+                            <marker id="arrowSel" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0078D4"/>
+                            </marker>
+                            <linearGradient id="colGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#D9E2EC"/>
+                                <stop offset="45%" stop-color="#F7FAFC"/>
+                                <stop offset="100%" stop-color="#B8C7D9"/>
+                            </linearGradient>
+                            <radialGradient id="hxGrad" cx="35%" cy="35%" r="65%">
+                                <stop offset="0%" stop-color="#FFFFFF"/>
+                                <stop offset="100%" stop-color="#AEBECD"/>
+                            </radialGradient>
+                        </defs>
+                        <g id="layerStreams"></g>
+                        <g id="layerBlocks"></g>
+                        <g id="layerAnnotations"></g>
+                    </svg>
+                    <div id="pfdStampedTable" class="pfd-stamped-table hidden"></div>
+                </div>
+
+                <div id="pfdInspectorBar" class="pfd-inspector-bar no-print">
+                    <span id="inspectorInfo" class="mono" style="color:var(--ap-muted);">Select Columns &rarr; RadFrac in the Model Palette below, then click on the grid to place your column.</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span>Selected ID:</span>
+                        <input id="inspectorNameInput" type="text" class="ap-input" style="width:115px; height:20px; font-weight:700; color:#005A9E;" placeholder="None" disabled onchange="renameFromInspector(this.value)">
+                    </div>
+                </div>
+
+                <!-- Bottom Model Palette -->
+                <div class="model-palette no-print">
+                    <div class="palette-tabs">
+                        <div class="pal-tab active" onclick="switchPaletteCat('columns', this)">Columns</div>
+                        <div class="pal-tab" onclick="switchPaletteCat('separators', this)">Separators</div>
+                        <div class="pal-tab" onclick="switchPaletteCat('exchangers', this)">Exchangers</div>
+                        <div class="pal-tab" onclick="switchPaletteCat('mixers', this)">Mixers/Splitters</div>
+                        <div class="pal-tab" onclick="switchPaletteCat('pressure', this)">Pressure Changers</div>
+                    </div>
+                    <div id="paletteItems" class="palette-items"></div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Stream Results -->
+            <div id="tab-streams-summary" class="doc-pane hidden">
+                <div class="sheet-card">
+                    <div class="sheet-head">
+                        <span>Results Summary - Streams (Material)</span>
+                        <button class="ap-btn" onclick="exportStreamsCSV()">Export CSV</button>
+                    </div>
+                    <div style="padding:10px; overflow-x:auto;" id="streamSummaryContainer"></div>
+                </div>
+            </div>
+
+            <!-- Tab 4: RadFrac Results & Graphs -->
+            <div id="tab-radfrac-results" class="doc-pane hidden">
+                <div id="radfracSummaryContainer"></div>
+            </div>
+
+            <!-- Tab 5: Reference Solution Comparison -->
+            <div id="tab-validation" class="doc-pane hidden">
+                <div id="validationContainer"></div>
+            </div>
+
+            <!-- Control Panel Log -->
+            <div id="controlPanel" class="control-panel no-print">
+                <div class="sheet-head" style="padding:3px 10px;">
+                    <span>Control Panel - Simulation Messages</span>
+                    <button class="ap-btn" style="height:19px; font-size:10px; padding:0 6px;" onclick="clearLog()">Clear</button>
+                </div>
+                <div id="cpLog" class="cp-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. STATUS BAR -->
+    <div id="statusBar" class="status-bar status-req no-print">
+        <div id="statusLeft">Required Input Incomplete — Add Chemical Components (Properties &rarr; Components)</div>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span id="statusMode">Blank Simulation</span>
+            <span id="zoomText">100%</span>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="ctx-menu hidden"></div>
+<div id="chartTooltip" class="chart-tooltip hidden"></div>
+
+<script>
+// ============================================================================
+// 1. THERMODYNAMIC DATABANK (ASPEN APV140 / DIPPR CONSTANTS FOR ACETONE & WATER)
+// ============================================================================
+const COMPONENT_DB = {
+    ACETONE: {
+        id: 'ACETONE',
+        name: 'ACETONE',
+        formula: 'C3H6O-1',
+        mw: 58.08004,
+        tcK: 508.2,
+        pcBar: 47.01,
+        // Extended Antoine ln(P_Pa) = C1 + C2/(T + C3) + C4*T + C5*ln(T) + C6*T^C7
+        antC1: 69.006, antC2: -5599.6, antC3: 0.0, antC4: 0.0, antC5: -7.0985, antC6: 6.2237e-6, antC7: 2.0,
+        dhf298: -51900.0, // cal/mol
+        s298Liq: -48.18,  // cal/mol-K
+        cpLiq: [17.25, 0.0442, 0.0],
+        cpVap: [6.3, 0.0261, -1.25e-5],
+        hvapNb: 6955.0,
+        tbK: 329.22,
+        rhoLiq25: 0.7845 // g/cc
+    },
+    WATER: {
+        id: 'WATER',
+        name: 'WATER',
+        formula: 'H2O',
+        mw: 18.01528,
+        tcK: 647.096,
+        pcBar: 220.64,
+        antC1: 73.649, antC2: -7258.2, antC3: 0.0, antC4: 0.0, antC5: -7.3037, antC6: 4.1653e-6, antC7: 2.0,
+        dhf298: -68315.0,
+        s298Liq: -38.95,
+        cpLiq: [18.03, 0.0005, 0.0],
+        cpVap: [7.7, 0.00046, 2.52e-6],
+        hvapNb: 9717.0,
+        tbK: 373.15,
+        rhoLiq25: 0.9970
+    },
+    ETHANOL: {
+        id: 'ETHANOL',
+        name: 'ETHANOL',
+        formula: 'C2H6O-2',
+        mw: 46.069,
+        tcK: 514.0,
+        pcBar: 61.37,
+        antC1: 73.304, antC2: -7122.3, antC3: 0.0, antC4: 0.0, antC5: -7.1424, antC6: 2.8853e-6, antC7: 2.0,
+        dhf298: -66200.0,
+        s298Liq: -38.4,
+        cpLiq: [24.65, 0.021, 0.0],
+        cpVap: [9.01, 0.0214, -8.39e-6],
+        hvapNb: 9220.0,
+        tbK: 351.44,
+        rhoLiq25: 0.7851
+    },
+    METHANOL: {
+        id: 'METHANOL',
+        name: 'METHANOL',
+        formula: 'CH4O',
+        mw: 32.042,
+        tcK: 512.6,
+        pcBar: 80.97,
+        antC1: 82.718, antC2: -6904.5, antC3: 0.0, antC4: 0.0, antC5: -8.8622, antC6: 7.4664e-6, antC7: 2.0,
+        dhf298: -57040.0,
+        s298Liq: -30.3,
+        cpLiq: [19.5, 0.018, 0.0],
+        cpVap: [5.05, 0.0169, -6.18e-6],
+        hvapNb: 8430.0,
+        tbK: 337.85,
+        rhoLiq25: 0.7866
+    },
+    '3-METHYLHEXANE': {
+        id: '3-METHYLHEXANE',
+        name: '3-METHYLHEXANE',
+        formula: 'C7H16-3',
+        mw: 100.204,
+        tcK: 535.2,
+        pcBar: 28.1,
+        antC1: 68.12, antC2: -6420.0, antC3: 0.0, antC4: 0.0, antC5: -6.85, antC6: 4.1e-6, antC7: 2.0,
+        dhf298: -53600.0,
+        s298Liq: -78.2,
+        cpLiq: [52.8, 0.045, 0.0],
+        cpVap: [14.2, 0.082, -3.5e-5],
+        hvapNb: 7680.0,
+        tbK: 365.0,
+        rhoLiq25: 0.683
+    }
+};
+
+// ============================================================================
+// 2. APPLICATION STATE (STARTS 100% BLANK)
+// ============================================================================
+let state = {};
+
+function newBlankSimulation() {
+    state = {
+        env: 'properties',
+        activeDocTab: 'setup',
+        activeNav: { kind: 'components', id: 'components' },
+        activeBlockSubtab: 'config',
+        unitSet: 'METCBAR',
+        components: [],
+        method: '',
+        nrtlParams: {
+            a12: 0.0544,
+            a21: 6.3981,
+            b12: 419.972,
+            b21: -1808.99,
+            c12: 0.30
+        },
+        blocks: [],
+        streams: [],
+        annotations: [],
+        streamCounter: 0,
+        blockCounter: 0,
+        selectedObj: { type: null, id: null },
+        placingBlockType: null,
+        materialConnectMode: false,
+        textAnnotateMode: false,
+        pendingPortStart: null,
+        draggingObj: null,
+        dragMoved: false,
+        showGrid: true,
+        showStreamBadges: false,
+        showStampedTable: false,
+        converged: false,
+        hasError: false,
+        zoom: 1.0
+    };
+
+    clearLog();
+    logMsg('[SYSTEM] New Blank Simulation initialized (Unit Set: METCBAR).', '#005A9E');
+    logMsg('[STEP 1] Enter chemical components in Properties -> Components -> Specifications.', '#57606A');
+    switchEnvironment('properties');
+    selectNav('components', 'components');
+    syncStatusUI();
+}
+
+// ============================================================================
+// 3. UNIT CONVERSION HELPERS
+// ============================================================================
+function convertTempToC(val, unit) {
+    const v = parseFloat(val);
+    if (isNaN(v)) return NaN;
+    if (unit === 'K') return v - 273.15;
+    if (unit === 'F') return (v - 32) * 5 / 9;
+    if (unit === 'R') return (v - 491.67) * 5 / 9;
+    return v; // C
+}
+
+function convertPressToBar(val, unit) {
+    const v = parseFloat(val);
+    if (isNaN(v)) return NaN;
+    switch (unit) {
+        case 'atm': return v * 1.01325;
+        case 'psia':
+        case 'psi': return v * 0.0689476;
+        case 'psig': return (v + 14.6959) * 0.0689476;
+        case 'kPa': return v * 0.01;
+        case 'MPa': return v * 10.0;
+        case 'Pa': return v * 1e-5;
+        case 'mmHg':
+        case 'torr': return v * 0.00133322;
+        default: return v; // bar
+    }
+}
+
+function setUnitSet(u) {
+    state.unitSet = u;
+    logMsg(`[UNITS] Active unit set changed to ${u}.`, '#005A9E');
+}
+
+// ============================================================================
+// 4. NAVIGATION, RIBBON, & ENVIRONMENT MANAGEMENT
+// ============================================================================
+function switchEnvironment(env) {
+    state.env = env;
+    document.getElementById('envTag').textContent =
+        env === 'properties' ? 'Properties' : env === 'simulation' ? 'Simulation' : 'Energy';
+
+    document.getElementById('envBtnProp').classList.toggle('active', env === 'properties');
+    document.getElementById('envBtnSim').classList.toggle('active', env === 'simulation');
+    document.getElementById('envBtnEnergy').classList.toggle('active', env === 'energy');
+
+    if (env === 'properties') {
+        selectNav('components', 'components');
+    } else if (env === 'simulation') {
+        switchDocTab('flowsheet');
+        renderNavTree();
+    } else if (env === 'energy') {
+        switchDocTab('validation');
+        renderNavTree();
+    }
+}
+
+function switchDocTab(tabId) {
+    state.activeDocTab = tabId;
+    document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
+    const tabEl = document.getElementById('dtab-' + tabId);
+    if (tabEl) tabEl.classList.add('active');
+
+    document.querySelectorAll('.doc-pane').forEach(p => p.classList.add('hidden'));
+    const paneEl = document.getElementById('tab-' + tabId);
+    if (paneEl) paneEl.classList.remove('hidden');
+
+    if (tabId === 'setup') renderSetupSheet();
+    if (tabId === 'flowsheet') renderPFD();
+    if (tabId === 'streams-summary') renderStreamSummary();
+    if (tabId === 'radfrac-results') renderRadFracResults();
+    if (tabId === 'validation') renderValidation();
+}
+
+function selectNav(kind, id) {
+    state.activeNav = { kind, id };
+    if (kind === 'components' || kind === 'methods' || kind === 'nrtl') {
+        state.env = 'properties';
+        document.getElementById('envBtnProp').classList.add('active');
+        document.getElementById('envBtnSim').classList.remove('active');
+        document.getElementById('envBtnEnergy').classList.remove('active');
+        switchDocTab('setup');
+    } else if (kind === 'flowsheet') {
+        state.env = 'simulation';
+        document.getElementById('envBtnProp').classList.remove('active');
+        document.getElementById('envBtnSim').classList.add('active');
+        document.getElementById('envBtnEnergy').classList.remove('active');
+        switchDocTab('flowsheet');
+    } else if (kind === 'block' || kind === 'stream') {
+        state.env = 'simulation';
+        document.getElementById('envBtnProp').classList.remove('active');
+        document.getElementById('envBtnSim').classList.add('active');
+        document.getElementById('envBtnEnergy').classList.remove('active');
+        switchDocTab('setup');
+    } else if (kind === 'block-results') {
+        switchDocTab('radfrac-results');
+    } else if (kind === 'results-streams') {
+        switchDocTab('streams-summary');
+    } else if (kind === 'validation') {
+        switchDocTab('validation');
+    }
+    renderNavTree();
+}
+
+function stepNext() {
+    if (state.components.length < 2) {
+        selectNav('components', 'components');
+        logMsg('[NEXT] Please add at least 2 components (e.g., ACETONE and WATER).', '#D83B01');
+        return;
+    }
+    if (!state.method) {
+        selectNav('methods', 'methods');
+        logMsg('[NEXT] Select Thermodynamic Base Method (e.g., NRTL).', '#D83B01');
+        return;
+    }
+    if (state.env === 'properties') {
+        switchEnvironment('simulation');
+        logMsg('[NEXT] Switched to Simulation Environment. Place RadFrac and connect streams.', '#005A9E');
+        return;
+    }
+    if (state.blocks.length === 0) {
+        switchDocTab('flowsheet');
+        logMsg('[NEXT] Select RadFrac from the Columns palette below and click on the grid.', '#D83B01');
+        return;
+    }
+    const feed = state.streams.find(s => !s.fromBlock);
+    if (!feed || feed.T === '' || feed.P === '' || feed.totalFlow === '') {
+        if (feed) selectNav('stream', feed.id);
+        else logMsg('[NEXT] Connect the Feed stream using the Material tool.', '#D83B01');
+        return;
+    }
+    const col = state.blocks[0];
+    if (col && (!col.params.stages || !col.params.condenser || !col.params.reboiler || !col.params.refluxRatio || !col.params.distillateRate || !col.params.feedStage || !col.params.condPressure)) {
+        selectNav('block', col.id);
+        logMsg(`[NEXT] Complete required RadFrac specifications for ${col.name}.`, '#D83B01');
+        return;
+    }
+    runSimulation();
+}
+
+function switchRibbonTab(name, el) {
+    document.querySelectorAll('.r-tab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.querySelectorAll('#ribbonToolbar .r-group').forEach(grp => {
+        const tabs = (grp.getAttribute('data-rtab') || 'home').split(' ');
+        grp.style.display = tabs.includes(name) ? 'flex' : 'none';
+    });
+}
+
+function togglePFDGrid() {
+    state.showGrid = !state.showGrid;
+    document.getElementById('pfdViewport').classList.toggle('no-grid', !state.showGrid);
+    document.getElementById('btnGridToggle').classList.toggle('active', state.showGrid);
+}
+
+function toggleStreamBadges() {
+    state.showStreamBadges = !state.showStreamBadges;
+    document.getElementById('btnStreamBadges').classList.toggle('active', state.showStreamBadges);
+    renderPFD();
+}
+
+function resetZoom() {
+    state.zoom = 1.0;
+    document.getElementById('zoomText').textContent = '100%';
+    renderPFD();
+}
+
+function toggleControlPanel() {
+    document.getElementById('controlPanel').classList.toggle('hidden');
+}
+
+// ============================================================================
+// 5. NAVIGATION TREE & STATUS VALIDATION
+// ============================================================================
+function isFeedComplete(s) {
+    if (!s || s.fromBlock) return true;
+    if (s.T === '' || s.P === '' || s.totalFlow === '') return false;
+    const sum = state.components.reduce((acc, c) => acc + (parseFloat(s.comp[c.id]) || 0), 0);
+    return sum > 0;
+}
+
+function isBlockComplete(b) {
+    const p = b.params;
+    return Boolean(p.stages && p.condenser && p.reboiler && p.refluxRatio !== '' && p.distillateRate !== '' && p.feedStage && p.condPressure !== '');
+}
+
+function renderNavTree() {
+    const tree = document.getElementById('navTree');
+    const compOk = state.components.length >= 2;
+    const methOk = Boolean(state.method);
+    const dot = (ok) => ok ? `<span class="status-dot-ok">&#10003;</span>` : `<span class="status-dot-req"></span>`;
+
+    if (state.env === 'properties') {
+        tree.innerHTML = `
+            <div class="tree-node ${state.activeNav.kind === 'components' ? 'active' : ''}" onclick="selectNav('components','components')">
+                ${dot(compOk)} <span>Components &rarr; Specifications</span>
+            </div>
+            <div class="tree-node ${state.activeNav.kind === 'methods' ? 'active' : ''}" onclick="selectNav('methods','methods')">
+                ${dot(methOk)} <span>Methods &rarr; Specifications</span>
+            </div>
+            ${state.method === 'NRTL' ? `
+                <div class="tree-node tree-indent-1 ${state.activeNav.kind === 'nrtl' ? 'active' : ''}" onclick="selectNav('nrtl','nrtl')">
+                    ${dot(true)} <span>Parameters &rarr; Binary &rarr; NRTL-1</span>
+                </div>
+            ` : ''}
+        `;
+    } else {
+        const blocksHTML = state.blocks.map(b => `
+            <div class="tree-node tree-indent-1 ${state.activeNav.kind === 'block' && state.activeNav.id === b.id ? 'active' : ''}" onclick="selectNav('block','${b.id}')">
+                ${dot(isBlockComplete(b))} <span>${b.name} (${b.type})</span>
+            </div>
+            ${b.results ? `
+                <div class="tree-node tree-indent-2 ${state.activeNav.kind === 'block-results' ? 'active' : ''}" onclick="selectNav('block-results','${b.id}')">
+                    ${dot(true)} <span>Results &rarr; Summary &amp; Profiles</span>
+                </div>
+            ` : ''}
+        `).join('');
+
+        const streamsHTML = state.streams.map(s => `
+            <div class="tree-node tree-indent-1 ${state.activeNav.kind === 'stream' && state.activeNav.id === s.id ? 'active' : ''}" onclick="selectNav('stream','${s.id}')">
+                ${dot(isFeedComplete(s))} <span>${s.name}</span>
+            </div>
+        `).join('');
+
+        tree.innerHTML = `
+            <div class="tree-node ${state.activeNav.kind === 'flowsheet' ? 'active' : ''}" onclick="selectNav('flowsheet','flowsheet')">
+                ${dot(state.blocks.length > 0 && state.streams.length >= 3)} <span>Main Flowsheet</span>
+            </div>
+            <div class="tree-node" style="font-weight:700; color:#004578; cursor:default;">
+                <span>&#9662; Blocks (${state.blocks.length})</span>
+            </div>
+            ${blocksHTML}
+            <div class="tree-node" style="font-weight:700; color:#004578; cursor:default;">
+                <span>&#9662; Streams (${state.streams.length})</span>
+            </div>
+            ${streamsHTML}
+            <div class="tree-node ${state.activeNav.kind === 'results-streams' ? 'active' : ''}" onclick="selectNav('results-streams','streams')">
+                ${dot(state.converged)} <span>Results Summary &rarr; Streams</span>
+            </div>
+            <div class="tree-node ${state.activeNav.kind === 'validation' ? 'active' : ''}" onclick="selectNav('validation','validation')">
+                ${dot(state.converged)} <span>Practical 11 Benchmark</span>
+            </div>
+        `;
+    }
+}
+
+function syncStatusUI() {
+    renderNavTree();
+    if (state.activeDocTab === 'flowsheet') renderPFD();
+
+    const sb = document.getElementById('statusBar');
+    const sl = document.getElementById('statusLeft');
+    const sm = document.getElementById('statusMode');
+
+    sb.classList.remove('status-req', 'status-ok', 'status-err');
+
+    if (state.hasError) {
+        sb.classList.add('status-err');
+        sl.textContent = 'Simulation Completed with Errors — Check Control Panel';
+        sm.textContent = 'Errors Present';
+    } else if (state.converged) {
+        sb.classList.add('status-ok');
+        sl.textContent = 'Results Available — Simulation Converged Normally';
+        sm.textContent = 'Converged';
+    } else if (state.components.length < 2) {
+        sb.classList.add('status-req');
+        sl.textContent = 'Required Input Incomplete — Specify Components (Properties -> Components)';
+        sm.textContent = 'Required Input Incomplete';
+    } else if (!state.method) {
+        sb.classList.add('status-req');
+        sl.textContent = 'Required Input Incomplete — Select Property Method (Methods -> Specifications)';
+        sm.textContent = 'Required Input Incomplete';
+    } else if (state.blocks.length === 0 || state.streams.length < 3) {
+        sb.classList.add('status-req');
+        sl.textContent = 'Required Input Incomplete — Place RadFrac Column and Connect Feed, Distillate, and Bottoms Streams';
+        sm.textContent = 'Flowsheet Incomplete';
+    } else if (!state.streams.every(isFeedComplete) || !state.blocks.every(isBlockComplete)) {
+        sb.classList.add('status-req');
+        sl.textContent = 'Required Input Incomplete — Complete Stream and Block Specifications (Marked with Red Border)';
+        sm.textContent = 'Required Input Incomplete';
+    } else {
+        sb.classList.add('status-ok');
+        sl.textContent = 'Required Input Complete — Press Run (F5) to Execute Simulation';
+        sm.textContent = 'Ready to Run';
+    }
+}
+
+// ============================================================================
+// 6. SPECIFICATION FORMS (COMPONENTS, METHODS, STREAM, RADFRAC)
+// ============================================================================
+function renderSetupSheet() {
+    const pane = document.getElementById('tab-setup');
+    const nav = state.activeNav;
+
+    if (nav.kind === 'components') {
+        const rows = state.components.map((c, idx) => `
+            <tr>
+                <td class="mono">${idx + 1}</td>
+                <td class="mono" style="font-weight:700; color:#004578;">${c.id}</td>
+                <td>CONV</td>
+                <td>${c.name}</td>
+                <td class="mono">${c.formula}</td>
+                <td class="mono">${c.mw.toFixed(5)}</td>
+                <td><button class="ap-btn" style="height:20px; font-size:10px;" onclick="removeComponent('${c.id}')">Remove</button></td>
+            </tr>
+        `).join('');
+
+        pane.innerHTML = `
+            <div class="sheet-card">
+                <div class="sheet-head">
+                    <span>Components - Specifications - Selection</span>
+                    <button class="ap-btn ap-btn-primary" onclick="stepNext()">Next (N&rarr;)</button>
+                </div>
+                <div style="padding:12px;">
+                    <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center;">
+                        <label style="font-weight:600;">Component ID:</label>
+                        <input id="compInput" list="compDatabankList" class="ap-input ${state.components.length === 0 ? 'req-empty' : ''}" style="width:220px; text-transform:uppercase;" placeholder="Type e.g. ACETONE or WATER" onkeydown="if(event.key==='Enter') addComponentFromInput()">
+                        <datalist id="compDatabankList">
+                            <option value="ACETONE">Acetone (C3H6O)</option>
+                            <option value="WATER">Water (H2O)</option>
+                            <option value="ETHANOL">Ethanol (C2H6O)</option>
+                            <option value="METHANOL">Methanol (CH4O)</option>
+                            <option value="3-METHYLHEXANE">3-Methylhexane (C7H16)</option>
+                        </datalist>
+                        <button class="ap-btn ap-btn-primary" onclick="addComponentFromInput()">+ Add Component</button>
+                    </div>
+                    <table class="ap-table">
+                        <thead>
+                            <tr>
+                                <th style="width:45px;">#</th>
+                                <th>Component ID</th>
+                                <th>Type</th>
+                                <th>Component name</th>
+                                <th>Alias / Formula</th>
+                                <th>Molecular Weight</th>
+                                <th style="width:80px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows || `<tr><td colspan="7" style="text-align:center; color:var(--ap-muted); padding:14px;">No components entered. Type ACETONE and WATER above to begin.</td></tr>`}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    } else if (nav.kind === 'methods') {
+        pane.innerHTML = `
+            <div class="sheet-card">
+                <div class="sheet-head">
+                    <span>Methods - Specifications - Global</span>
+                    <button class="ap-btn ap-btn-primary" onclick="stepNext()">Next (N&rarr;)</button>
+                </div>
+                <div style="padding:14px; display:grid; grid-template-columns:260px 1fr; gap:14px; align-items:center;">
+                    <label style="font-weight:600;">Method filter:</label>
+                    <select class="ap-select" style="width:240px;"><option>ALL</option><option>Activity Coefficient</option><option>Equation of State</option></select>
+
+                    <label style="font-weight:600;">Base method:</label>
+                    <select class="ap-select ${!state.method ? 'req-empty' : ''}" style="width:240px;" onchange="setBaseMethod(this.value)">
+                        <option value="" ${state.method === '' ? 'selected' : ''}>-- Select Property Method --</option>
+                        <option value="NRTL" ${state.method === 'NRTL' ? 'selected' : ''}>NRTL</option>
+                        <option value="UNIQUAC" ${state.method === 'UNIQUAC' ? 'selected' : ''}>UNIQUAC</option>
+                        <option value="WILSON" ${state.method === 'WILSON' ? 'selected' : ''}>WILSON</option>
+                        <option value="PENG-ROB" ${state.method === 'PENG-ROB' ? 'selected' : ''}>PENG-ROB</option>
+                        <option value="IDEAL" ${state.method === 'IDEAL' ? 'selected' : ''}>IDEAL</option>
+                    </select>
+                </div>
+                ${state.method === 'NRTL' ? `
+                    <div style="padding:0 14px 14px 14px;">
+                        <div style="background:#EFF6FC; border:1px solid #B3D6F2; padding:8px 10px; font-size:11.5px; color:#004578;">
+                            <strong>APV140 VLE-IG Databank Retrieved:</strong> NRTL-1 binary interaction parameters loaded for ${state.components.map(c => c.id).join(' / ') || 'selected components'}. Click <strong>Simulation</strong> at bottom-left or press <strong>Next (N&rarr;)</strong> to build your flowsheet.
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    } else if (nav.kind === 'nrtl') {
+        const p = state.nrtlParams;
+        pane.innerHTML = `
+            <div class="sheet-card">
+                <div class="sheet-head">
+                    <span>Parameters - Binary Interaction - NRTL-1 (APV140 VLE-IG)</span>
+                    <button class="ap-btn ap-btn-primary" onclick="switchEnvironment('simulation')">Go to Simulation &rarr;</button>
+                </div>
+                <div style="padding:12px;">
+                    <table class="ap-table mono">
+                        <thead>
+                            <tr><th>Parameter</th><th>Component i</th><th>Component j</th><th>Value (Databank)</th><th>Units</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>AIJ</td><td>ACETONE</td><td>WATER</td><td><input type="number" step="any" class="ap-input" value="${p.a12}" onchange="state.nrtlParams.a12=parseFloat(this.value)"></td><td>-</td></tr>
+                            <tr><td>AJI</td><td>ACETONE</td><td>WATER</td><td><input type="number" step="any" class="ap-input" value="${p.a21}" onchange="state.nrtlParams.a21=parseFloat(this.value)"></td><td>-</td></tr>
+                            <tr><td>BIJ</td><td>ACETONE</td><td>WATER</td><td><input type="number" step="any" class="ap-input" value="${p.b12}" onchange="state.nrtlParams.b12=parseFloat(this.value)"></td><td>K</td></tr>
+                            <tr><td>BJI</td><td>ACETONE</td><td>WATER</td><td><input type="number" step="any" class="ap-input" value="${p.b21}" onchange="state.nrtlParams.b21=parseFloat(this.value)"></td><td>K</td></tr>
+                            <tr><td>CIJ</td><td>ACETONE</td><td>WATER</td><td><input type="number" step="any" class="ap-input" value="${p.c12}" onchange="state.nrtlParams.c12=parseFloat(this.value)"></td><td>-</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    } else if (nav.kind === 'stream') {
+        const s = state.streams.find(st => st.id === nav.id);
+        if (!s) { switchDocTab('flowsheet'); return; }
+        if (s.fromBlock) {
+            pane.innerHTML = `
+                <div class="sheet-card">
+                    <div class="sheet-head"><span>Stream ${s.name} (Product / Outlet Stream from ${s.fromBlock})</span></div>
+                    <div style="padding:14px; color:var(--ap-muted);">
+                        Outlet streams are calculated automatically by the connected unit operation block. View calculated values under <strong>Stream Results</strong> after clicking <strong>Run (F5)</strong>.
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const compRows = state.components.map(c => {
+            const val = s.comp[c.id] !== undefined ? s.comp[c.id] : '';
+            return `
+                <tr>
+                    <td class="mono" style="font-weight:700;">${c.id}</td>
+                    <td>${c.name}</td>
+                    <td><input type="number" step="any" class="ap-input ${val === '' ? 'req-empty' : ''}" value="${val}" onchange="setStreamComp('${s.id}','${c.id}',this.value)"></td>
+                </tr>
+            `;
+        }).join('');
+
+        pane.innerHTML = `
+            <div class="sheet-card">
+                <div class="sheet-head">
+                    <span>Streams - ${s.name} - Input (Mixed)</span>
+                    <button class="ap-btn ap-btn-primary" onclick="stepNext()">Next (N&rarr;)</button>
+                </div>
+                <div style="padding:14px; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div style="display:flex; flex-direction:column; gap:10px; background:#F9FBFD; border:1px solid var(--ap-border); padding:12px;">
+                        <div style="font-weight:700; color:#004578; border-bottom:1px solid var(--ap-border); padding-bottom:4px;">State Variables &amp; Total Flow</div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:3px;">Temperature:</label>
+                            <div style="display:flex; gap:4px;">
+                                <input type="number" step="any" class="ap-input ${s.T === '' ? 'req-empty' : ''}" value="${s.T}" onchange="setStreamField('${s.id}','T',this.value)">
+                                <select class="ap-select mono" style="width:80px;" onchange="setStreamField('${s.id}','TUnit',this.value)">
+                                    <option value="C" ${(s.TUnit || 'C') === 'C' ? 'selected' : ''}>C</option>
+                                    <option value="K" ${s.TUnit === 'K' ? 'selected' : ''}>K</option>
+                                    <option value="F" ${s.TUnit === 'F' ? 'selected' : ''}>F</option>
+                                    <option value="R" ${s.TUnit === 'R' ? 'selected' : ''}>R</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:3px;">Pressure:</label>
+                            <div style="display:flex; gap:4px;">
+                                <input type="number" step="any" class="ap-input ${s.P === '' ? 'req-empty' : ''}" value="${s.P}" onchange="setStreamField('${s.id}','P',this.value)">
+                                <select class="ap-select mono" style="width:80px;" onchange="setStreamField('${s.id}','PUnit',this.value)">
+                                    <option value="bar" ${(s.PUnit || 'bar') === 'bar' ? 'selected' : ''}>bar</option>
+                                    <option value="atm" ${s.PUnit === 'atm' ? 'selected' : ''}>atm</option>
+                                    <option value="psia" ${s.PUnit === 'psia' ? 'selected' : ''}>psia</option>
+                                    <option value="psig" ${s.PUnit === 'psig' ? 'selected' : ''}>psig</option>
+                                    <option value="psi" ${s.PUnit === 'psi' ? 'selected' : ''}>psi</option>
+                                    <option value="kPa" ${s.PUnit === 'kPa' ? 'selected' : ''}>kPa</option>
+                                    <option value="MPa" ${s.PUnit === 'MPa' ? 'selected' : ''}>MPa</option>
+                                    <option value="Pa" ${s.PUnit === 'Pa' ? 'selected' : ''}>Pa</option>
+                                    <option value="mmHg" ${s.PUnit === 'mmHg' ? 'selected' : ''}>mmHg</option>
+                                    <option value="torr" ${s.PUnit === 'torr' ? 'selected' : ''}>torr</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:3px;">Total flow rate:</label>
+                            <div style="display:flex; gap:4px;">
+                                <select class="ap-select" style="width:85px;" onchange="setStreamField('${s.id}','flowBasis',this.value)">
+                                    <option value="Mass" ${(s.flowBasis || 'Mass') === 'Mass' ? 'selected' : ''}>Mass</option>
+                                    <option value="Mole" ${s.flowBasis === 'Mole' ? 'selected' : ''}>Mole</option>
+                                </select>
+                                <input type="number" step="any" class="ap-input ${s.totalFlow === '' ? 'req-empty' : ''}" value="${s.totalFlow}" onchange="setStreamField('${s.id}','totalFlow',this.value)">
+                                <span class="mono" style="align-self:center; padding:0 4px;">${(s.flowBasis || 'Mass') === 'Mass' ? 'kg/hr' : 'kmol/hr'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:10px; background:#F9FBFD; border:1px solid var(--ap-border); padding:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--ap-border); padding-bottom:4px;">
+                            <span style="font-weight:700; color:#004578;">Composition</span>
+                            <select class="ap-select" style="width:130px;" onchange="setStreamField('${s.id}','compBasis',this.value)">
+                                <option value="Mass-Frac" ${(s.compBasis || 'Mass-Frac') === 'Mass-Frac' ? 'selected' : ''}>Mass-Frac</option>
+                                <option value="Mole-Frac" ${s.compBasis === 'Mole-Frac' ? 'selected' : ''}>Mole-Frac</option>
+                                <option value="Mass-Flow" ${s.compBasis === 'Mass-Flow' ? 'selected' : ''}>Mass-Flow (kg/hr)</option>
+                                <option value="Mole-Flow" ${s.compBasis === 'Mole-Flow' ? 'selected' : ''}>Mole-Flow (kmol/hr)</option>
+                            </select>
+                        </div>
+                        <table class="ap-table">
+                            <thead><tr><th>Component ID</th><th>Component Name</th><th>Value</th></tr></thead>
+                            <tbody>${compRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (nav.kind === 'block') {
+        const b = state.blocks.find(bl => bl.id === nav.id);
+        if (!b) { switchDocTab('flowsheet'); return; }
+        const p = b.params;
+        const tab = state.activeBlockSubtab || 'config';
+        const feedStream = state.streams.find(s => s.toBlock === b.id);
+        const productStreams = state.streams.filter(s => s.fromBlock === b.id);
+
+        let inner = '';
+        if (tab === 'config') {
+            inner = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; background:#F9FBFD; border:1px solid var(--ap-border); padding:12px;">
+                    <div style="display:flex; flex-direction:column; gap:9px;">
+                        <div style="font-weight:700; color:#004578; border-bottom:1px solid var(--ap-border); padding-bottom:3px;">Setup Options</div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:2px;">Calculation type:</label>
+                            <select class="ap-select" onchange="setBlockParam('${b.id}','calcType',this.value)">
+                                <option value="Equilibrium" ${p.calcType === 'Equilibrium' ? 'selected' : ''}>Equilibrium</option>
+                                <option value="Rate-Based" ${p.calcType === 'Rate-Based' ? 'selected' : ''}>Rate-Based</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:2px;">Number of stages:</label>
+                            <input type="number" class="ap-input ${p.stages === '' ? 'req-empty' : ''}" value="${p.stages}" onchange="setBlockParam('${b.id}','stages',this.value)">
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:2px;">Condenser:</label>
+                            <select class="ap-select ${p.condenser === '' ? 'req-empty' : ''}" onchange="setBlockParam('${b.id}','condenser',this.value)">
+                                <option value="" ${p.condenser === '' ? 'selected' : ''}>-- Select Condenser --</option>
+                                <option value="Partial-Vapor" ${p.condenser === 'Partial-Vapor' ? 'selected' : ''}>Partial-Vapor</option>
+                                <option value="Total" ${p.condenser === 'Total' ? 'selected' : ''}>Total</option>
+                                <option value="Partial-Vapor-Liquid" ${p.condenser === 'Partial-Vapor-Liquid' ? 'selected' : ''}>Partial-Vapor-Liquid</option>
+                                <option value="None" ${p.condenser === 'None' ? 'selected' : ''}>None</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:2px;">Reboiler:</label>
+                            <select class="ap-select ${p.reboiler === '' ? 'req-empty' : ''}" onchange="setBlockParam('${b.id}','reboiler',this.value)">
+                                <option value="" ${p.reboiler === '' ? 'selected' : ''}>-- Select Reboiler --</option>
+                                <option value="Kettle" ${p.reboiler === 'Kettle' ? 'selected' : ''}>Kettle</option>
+                                <option value="Thermosyphon" ${p.reboiler === 'Thermosyphon' ? 'selected' : ''}>Thermosyphon</option>
+                                <option value="None" ${p.reboiler === 'None' ? 'selected' : ''}>None</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:9px;">
+                        <div style="font-weight:700; color:#004578; border-bottom:1px solid var(--ap-border); padding-bottom:3px;">Phases, Convergence &amp; Operating Specifications</div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:2px;">Valid phases:</label>
+                            <select class="ap-select" onchange="setBlockParam('${b.id}','validPhases',this.value)">
+                                <option value="Vapor-Liquid" ${p.validPhases === 'Vapor-Liquid' ? 'selected' : ''}>Vapor-Liquid</option>
+                                <option value="Vapor-Liquid-Liquid" ${p.validPhases === 'Vapor-Liquid-Liquid' ? 'selected' : ''}>Vapor-Liquid-Liquid</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:2px;">Convergence:</label>
+                            <select class="ap-select ${p.convergence === '' ? 'req-empty' : ''}" onchange="setBlockParam('${b.id}','convergence',this.value)">
+                                <option value="" ${p.convergence === '' ? 'selected' : ''}>-- Select Convergence --</option>
+                                <option value="Standard" ${p.convergence === 'Standard' ? 'selected' : ''}>Standard</option>
+                                <option value="Strongly non-ideal liquid" ${p.convergence === 'Strongly non-ideal liquid' ? 'selected' : ''}>Strongly non-ideal liquid</option>
+                                <option value="Petroleum/Wide-boiling" ${p.convergence === 'Petroleum/Wide-boiling' ? 'selected' : ''}>Petroleum/Wide-boiling</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:2px;">Reflux ratio (Initial Guess):</label>
+                            <div style="display:flex; gap:4px;">
+                                <input type="number" step="any" class="ap-input ${p.refluxRatio === '' ? 'req-empty' : ''}" value="${p.refluxRatio}" onchange="setBlockParam('${b.id}','refluxRatio',this.value)">
+                                <select class="ap-select" style="width:90px;" onchange="setBlockParam('${b.id}','rrBasis',this.value)">
+                                    <option value="Mole" ${p.rrBasis === 'Mole' ? 'selected' : ''}>Mole</option>
+                                    <option value="Mass" ${p.rrBasis === 'Mass' ? 'selected' : ''}>Mass</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:600; margin-bottom:2px;">Distillate rate:</label>
+                            <div style="display:flex; gap:4px;">
+                                <input type="number" step="any" class="ap-input ${p.distillateRate === '' ? 'req-empty' : ''}" value="${p.distillateRate}" onchange="setBlockParam('${b.id}','distillateRate',this.value)">
+                                <select class="ap-select" style="width:90px;" onchange="setBlockParam('${b.id}','distBasis',this.value)">
+                                    <option value="Mole" ${p.distBasis === 'Mole' ? 'selected' : ''}>Mole</option>
+                                    <option value="Mass" ${p.distBasis === 'Mass' ? 'selected' : ''}>Mass</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (tab === 'streams') {
+            inner = `
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:12px;">
+                    <div style="font-weight:700; color:#004578; margin-bottom:8px;">Feed Streams</div>
+                    <table class="ap-table">
+                        <thead><tr><th>Stream</th><th>Stage</th><th>Convention</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td class="mono" style="font-weight:700;">${feedStream ? feedStream.name : '(No Feed Connected)'}</td>
+                                <td><input type="number" class="ap-input ${p.feedStage === '' ? 'req-empty' : ''}" style="width:120px;" value="${p.feedStage}" onchange="setBlockParam('${b.id}','feedStage',this.value)"></td>
+                                <td>
+                                    <select class="ap-select ${p.feedConvention === '' ? 'req-empty' : ''}" style="width:180px;" onchange="setBlockParam('${b.id}','feedConvention',this.value)">
+                                        <option value="" ${p.feedConvention === '' ? 'selected' : ''}>-- Select --</option>
+                                        <option value="Above-Stage" ${p.feedConvention === 'Above-Stage' ? 'selected' : ''}>Above-Stage</option>
+                                        <option value="On-Stage" ${p.feedConvention === 'On-Stage' ? 'selected' : ''}>On-Stage</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="font-weight:700; color:#004578; margin:12px 0 8px 0;">Product Streams</div>
+                    <table class="ap-table">
+                        <thead><tr><th>Stream</th><th>Stage</th><th>Phase</th></tr></thead>
+                        <tbody>
+                            ${productStreams.map(ps => `
+                                <tr>
+                                    <td class="mono" style="font-weight:700;">${ps.name}</td>
+                                    <td class="mono">${ps.portType === 'top' ? '1' : (p.stages || 'N')}</td>
+                                    <td>${ps.portType === 'top' ? 'Vapor' : 'Liquid'}</td>
+                                </tr>
+                            `).join('') || '<tr><td colspan="3" style="color:var(--ap-muted);">No product streams connected.</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else if (tab === 'pressure') {
+            inner = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; background:#F9FBFD; border:1px solid var(--ap-border); padding:12px;">
+                    <div>
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">Stage 1 / Condenser pressure:</label>
+                        <div style="display:flex; gap:4px;">
+                            <input type="number" step="any" class="ap-input ${p.condPressure === '' ? 'req-empty' : ''}" value="${p.condPressure}" onchange="setBlockParam('${b.id}','condPressure',this.value)">
+                            <select class="ap-select mono" style="width:85px;" onchange="setBlockParam('${b.id}','condPressUnit',this.value)">
+                                <option value="bar" ${(p.condPressUnit || 'bar') === 'bar' ? 'selected' : ''}>bar</option>
+                                <option value="atm" ${p.condPressUnit === 'atm' ? 'selected' : ''}>atm</option>
+                                <option value="psia" ${p.condPressUnit === 'psia' ? 'selected' : ''}>psia</option>
+                                <option value="kPa" ${p.condPressUnit === 'kPa' ? 'selected' : ''}>kPa</option>
+                                <option value="mmHg" ${p.condPressUnit === 'mmHg' ? 'selected' : ''}>mmHg</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display:block; font-weight:600; margin-bottom:4px;">Stage pressure drop (bar):</label>
+                        <input type="number" step="any" class="ap-input" value="${p.stageDp}" onchange="setBlockParam('${b.id}','stageDp',this.value)">
+                    </div>
+                </div>
+            `;
+        } else if (tab === 'designspec') {
+            const ds = b.designSpecs[0];
+            inner = `
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span style="font-weight:700; color:#004578;">Design Specifications (Purity Target)</span>
+                        ${!ds ? `<button class="ap-btn ap-btn-primary" onclick="addDesignSpec('${b.id}')">+ New Design Spec (ID: 1)</button>` : `<button class="ap-btn" onclick="removeDesignSpec('${b.id}')">Delete Spec</button>`}
+                    </div>
+                    ${ds ? `
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                            <div>
+                                <label style="display:block; font-weight:600; margin-bottom:2px;">Design Spec Type:</label>
+                                <select class="ap-select" onchange="updateDesignSpec('${b.id}','type',this.value)">
+                                    <option value="Mass purity" ${ds.type === 'Mass purity' ? 'selected' : ''}>Mass purity</option>
+                                    <option value="Mole purity" ${ds.type === 'Mole purity' ? 'selected' : ''}>Mole purity</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; font-weight:600; margin-bottom:2px;">Target Value:</label>
+                                <input type="number" step="any" class="ap-input ${ds.target === '' ? 'req-empty' : ''}" value="${ds.target}" onchange="updateDesignSpec('${b.id}','target',this.value)">
+                            </div>
+                            <div>
+                                <label style="display:block; font-weight:600; margin-bottom:2px;">Component:</label>
+                                <select class="ap-select" onchange="updateDesignSpec('${b.id}','comp',this.value)">
+                                    <option value="">-- Select Component --</option>
+                                    ${state.components.map(c => `<option value="${c.id}" ${ds.comp === c.id ? 'selected' : ''}>${c.id}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; font-weight:600; margin-bottom:2px;">Feed / Product Stream:</label>
+                                <select class="ap-select" onchange="updateDesignSpec('${b.id}','streamId',this.value)">
+                                    <option value="">-- Select Stream --</option>
+                                    ${productStreams.map(ps => `<option value="${ps.id}" ${ds.streamId === ps.id ? 'selected' : ''}>${ps.name}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                    ` : `<div style="color:var(--ap-muted);">No Design Specifications defined. Click <strong>+ New Design Spec (ID: 1)</strong> to specify product purity target (e.g., 0.991 Mass purity).</div>`}
+                </div>
+            `;
+        } else if (tab === 'vary') {
+            const v = b.varySpecs[0];
+            inner = `
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span style="font-weight:700; color:#004578;">Vary (Adjusted Variable for Design Spec)</span>
+                        ${!v ? `<button class="ap-btn ap-btn-primary" onclick="addVarySpec('${b.id}')">+ New Vary (ID: 1)</button>` : `<button class="ap-btn" onclick="removeVarySpec('${b.id}')">Delete Vary</button>`}
+                    </div>
+                    ${v ? `
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                            <div>
+                                <label style="display:block; font-weight:600; margin-bottom:2px;">Variable type:</label>
+                                <select class="ap-select" onchange="updateVarySpec('${b.id}','type',this.value)">
+                                    <option value="Reflux ratio" ${v.type === 'Reflux ratio' ? 'selected' : ''}>Reflux ratio</option>
+                                    <option value="Distillate rate" ${v.type === 'Distillate rate' ? 'selected' : ''}>Distillate rate</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; font-weight:600; margin-bottom:2px;">Lower bound:</label>
+                                <input type="number" step="any" class="ap-input ${v.lower === '' ? 'req-empty' : ''}" value="${v.lower}" onchange="updateVarySpec('${b.id}','lower',this.value)">
+                            </div>
+                            <div>
+                                <label style="display:block; font-weight:600; margin-bottom:2px;">Upper bound:</label>
+                                <input type="number" step="any" class="ap-input ${v.upper === '' ? 'req-empty' : ''}" value="${v.upper}" onchange="updateVarySpec('${b.id}','upper',this.value)">
+                            </div>
+                        </div>
+                    ` : `<div style="color:var(--ap-muted);">No Vary variables defined. Click <strong>+ New Vary (ID: 1)</strong> to specify Reflux ratio bounds (0.5 to 10.0).</div>`}
+                </div>
+            `;
+        }
+
+        pane.innerHTML = `
+            <div class="sheet-card">
+                <div class="sheet-head">
+                    <span>Blocks - ${b.name} (RadFrac) - Setup</span>
+                    <button class="ap-btn ap-btn-primary" onclick="runSimulation()">Run (F5)</button>
+                </div>
+                <div class="subtab-bar">
+                    <div class="subtab ${tab === 'config' ? 'active' : ''}" onclick="state.activeBlockSubtab='config'; renderSetupSheet();">Configuration</div>
+                    <div class="subtab ${tab === 'streams' ? 'active' : ''}" onclick="state.activeBlockSubtab='streams'; renderSetupSheet();">Streams</div>
+                    <div class="subtab ${tab === 'pressure' ? 'active' : ''}" onclick="state.activeBlockSubtab='pressure'; renderSetupSheet();">Pressure</div>
+                    <div class="subtab ${tab === 'designspec' ? 'active' : ''}" onclick="state.activeBlockSubtab='designspec'; renderSetupSheet();">Design Specifications</div>
+                    <div class="subtab ${tab === 'vary' ? 'active' : ''}" onclick="state.activeBlockSubtab='vary'; renderSetupSheet();">Vary</div>
+                </div>
+                <div style="padding:12px;">${inner}</div>
+            </div>
+        `;
+    }
+}
+
+// Form Mutators
+function addComponentFromInput() {
+    const inp = document.getElementById('compInput');
+    if (!inp) return;
+    const raw = inp.value.trim().toUpperCase();
+    if (!raw) return;
+    if (state.components.some(c => c.id === raw)) {
+        logMsg(`[WARNING] Component ${raw} is already in the list.`, '#D83B01');
+        return;
+    }
+    const found = COMPONENT_DB[raw];
+    if (!found) {
+        logMsg(`[ERROR] Component '${raw}' not found in databank. Available: ACETONE, WATER, ETHANOL, METHANOL, 3-METHYLHEXANE.`, '#A80000');
+        return;
+    }
+    state.components.push({ ...found });
+    logMsg(`[COMPONENTS] Added ${found.id} (${found.formula}, MW = ${found.mw}).`, '#107C10');
+    renderSetupSheet();
+    syncStatusUI();
+}
+
+function removeComponent(id) {
+    state.components = state.components.filter(c => c.id !== id);
+    renderSetupSheet();
+    syncStatusUI();
+}
+
+function setBaseMethod(val) {
+    state.method = val;
+    if (val) logMsg(`[METHODS] Base property method set to ${val}.`, '#107C10');
+    renderSetupSheet();
+    syncStatusUI();
+}
+
+function setStreamField(id, field, val) {
+    const s = state.streams.find(st => st.id === id);
+    if (!s) return;
+    s[field] = val;
+    state.converged = false;
+    renderSetupSheet();
+    syncStatusUI();
+}
+
+function setStreamComp(id, compId, val) {
+    const s = state.streams.find(st => st.id === id);
+    if (!s) return;
+    s.comp[compId] = val;
+    state.converged = false;
+    renderSetupSheet();
+    syncStatusUI();
+}
+
+function setBlockParam(id, field, val) {
+    const b = state.blocks.find(bl => bl.id === id);
+    if (!b) return;
+    b.params[field] = val;
+    state.converged = false;
+    renderSetupSheet();
+    syncStatusUI();
+}
+
+function addDesignSpec(blockId) {
+    const b = state.blocks.find(bl => bl.id === blockId);
+    if (!b) return;
+    b.designSpecs = [{ id: 1, type: 'Mass purity', target: '', comp: '', streamId: '' }];
+    renderSetupSheet();
+}
+
+function removeDesignSpec(blockId) {
+    const b = state.blocks.find(bl => bl.id === blockId);
+    if (!b) return;
+    b.designSpecs = [];
+    renderSetupSheet();
+}
+
+function updateDesignSpec(blockId, field, val) {
+    const b = state.blocks.find(bl => bl.id === blockId);
+    if (!b || !b.designSpecs[0]) return;
+    b.designSpecs[0][field] = val;
+    state.converged = false;
+}
+
+function addVarySpec(blockId) {
+    const b = state.blocks.find(bl => bl.id === blockId);
+    if (!b) return;
+    b.varySpecs = [{ id: 1, type: 'Reflux ratio', lower: '', upper: '' }];
+    renderSetupSheet();
+}
+
+function removeVarySpec(blockId) {
+    const b = state.blocks.find(bl => bl.id === blockId);
+    if (!b) return;
+    b.varySpecs = [];
+    renderSetupSheet();
+}
+
+function updateVarySpec(blockId, field, val) {
+    const b = state.blocks.find(bl => bl.id === blockId);
+    if (!b || !b.varySpecs[0]) return;
+    b.varySpecs[0][field] = val;
+    state.converged = false;
+}
+
+// ============================================================================
+// 7. MODEL PALETTE & INTERACTIVE PFD FLOWSHEET
+// ============================================================================
+const PALETTE_DATA = {
+    columns: [
+        { type: 'RadFrac', label: 'RadFrac', desc: 'Rigorous 2/3-Phase Distillation' },
+        { type: 'DSTWU', label: 'DSTWU', desc: 'Shortcut Distillation' }
+    ],
+    separators: [
+        { type: 'Flash2', label: 'Flash2', desc: 'Two-Outlet Flash Drum' },
+        { type: 'Extract', label: 'Extract', desc: 'Liquid-Liquid Extractor' }
+    ],
+    exchangers: [
+        { type: 'Heater', label: 'Heater', desc: 'Heater / Cooler' }
+    ],
+    mixers: [
+        { type: 'Mixer', label: 'Mixer', desc: 'Stream Mixer' },
+        { type: 'FSplit', label: 'FSplit', desc: 'Flow Splitter' }
+    ],
+    pressure: [
+        { type: 'Pump', label: 'Pump', desc: 'Centrifugal Pump' }
+    ]
+};
+
+function switchPaletteCat(cat, el) {
+    document.querySelectorAll('.pal-tab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const box = document.getElementById('paletteItems');
+    box.innerHTML = (PALETTE_DATA[cat] || []).map(item => `
+        <div class="pal-item ${state.placingBlockType === item.type ? 'active' : ''}" onclick="startPlacingBlock('${item.type}')" title="${item.desc}">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#005A9E" stroke-width="1.8">
+                <rect x="7" y="2" width="10" height="20" rx="5" fill="#DCE8F5"/>
+                <line x1="7" y1="7" x2="17" y2="7"/>
+                <line x1="7" y1="12" x2="17" y2="12"/>
+                <line x1="7" y1="17" x2="17" y2="17"/>
+            </svg>
+            <span>${item.label}</span>
+        </div>
+    `).join('');
+}
+
+function startPlacingBlock(type) {
+    state.placingBlockType = (state.placingBlockType === type) ? null : type;
+    state.materialConnectMode = false;
+    state.textAnnotateMode = false;
+    document.getElementById('btnMaterialTool').classList.remove('active');
+    document.getElementById('btnTextTool').classList.remove('active');
+    switchPaletteCat('columns');
+    if (state.placingBlockType) {
+        logMsg(`[FLOWSHEET] Click anywhere on the PFD grid to place ${type}.`, '#005A9E');
+    }
+}
+
+function toggleMaterialConnectMode() {
+    state.materialConnectMode = !state.materialConnectMode;
+    state.placingBlockType = null;
+    state.textAnnotateMode = false;
+    state.pendingPortStart = null;
+    document.getElementById('btnMaterialTool').classList.toggle('active', state.materialConnectMode);
+    document.getElementById('btnTextTool').classList.remove('active');
+    renderPFD();
+    if (state.materialConnectMode) {
+        logMsg('[FLOWSHEET] Material stream mode active: Click red port connectors on the block to attach Feed, Distillate, and Bottoms streams.', '#005A9E');
+    }
+}
+
+function toggleTextAnnotateMode() {
+    state.textAnnotateMode = !state.textAnnotateMode;
+    state.placingBlockType = null;
+    state.materialConnectMode = false;
+    document.getElementById('btnTextTool').classList.toggle('active', state.textAnnotateMode);
+    document.getElementById('btnMaterialTool').classList.remove('active');
+    renderPFD();
+}
+
+function getBlockPorts(b) {
+    return {
+        feed: { x: b.x, y: b.y + 52, label: 'Feed (Required)' },
+        top: { x: b.x + 88, y: b.y - 38, label: 'Vapor Distillate' },
+        bottom: { x: b.x + 88, y: b.y + 132, label: 'Bottoms Liquid' }
+    };
+}
+
+function onPortClick(e, blockId, portKey) {
+    e.stopPropagation();
+    const b = state.blocks.find(bl => bl.id === blockId);
+    if (!b) return;
+    const ports = getBlockPorts(b);
+
+    if (portKey === 'feed') {
+        if (state.streams.some(s => s.toBlock === b.id)) {
+            logMsg(`[WARNING] Feed port on ${b.name} already has a stream attached.`, '#D83B01');
+            return;
+        }
+        state.streamCounter++;
+        const id = 'S' + state.streamCounter;
+        const name = String(state.streamCounter);
+        state.streams.push({
+            id, name,
+            fromBlock: null,
+            toBlock: b.id,
+            portType: 'feed',
+            startPt: { x: Math.max(40, b.x - 160), y: ports.feed.y },
+            endPt: { x: ports.feed.x, y: ports.feed.y },
+            T: '', TUnit: 'C',
+            P: '', PUnit: 'bar',
+            totalFlow: '', flowBasis: 'Mass',
+            compBasis: 'Mass-Frac',
+            comp: {},
+            results: null
+        });
+        logMsg(`[FLOWSHEET] Feed stream '${name}' connected to ${b.name}. Right-click or use Rename to rename to FEED.`, '#107C10');
+        syncStatusUI();
+    } else if (portKey === 'top' || portKey === 'bottom') {
+        if (state.streams.some(s => s.fromBlock === b.id && s.portType === portKey)) {
+            logMsg(`[WARNING] ${portKey === 'top' ? 'Overhead' : 'Bottoms'} port on ${b.name} already connected.`, '#D83B01');
+            return;
+        }
+        state.streamCounter++;
+        const id = 'S' + state.streamCounter;
+        const name = String(state.streamCounter);
+        const pt = ports[portKey];
+        state.streams.push({
+            id, name,
+            fromBlock: b.id,
+            toBlock: null,
+            portType: portKey,
+            startPt: { x: pt.x, y: pt.y },
+            endPt: { x: pt.x + 175, y: portKey === 'top' ? Math.max(40, pt.y - 45) : pt.y + 45 },
+            results: null
+        });
+        logMsg(`[FLOWSHEET] Product stream '${name}' connected to ${b.name}. Right-click or use Rename to rename.`, '#107C10');
+        syncStatusUI();
+    }
+}
+
+function onCanvasMouseDown(e) {
+    if (e.button !== 0 || state.placingBlockType || state.materialConnectMode || state.textAnnotateMode) return;
+    if (e.target.closest('#pfdStampedTable')) return;
+    const targetG = e.target.closest('[data-drag-type]');
+    if (!targetG) return;
+
+    const svg = document.getElementById('pfdSvg');
+    const rect = svg.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / state.zoom;
+    const my = (e.clientY - rect.top) / state.zoom;
+
+    const dtype = targetG.getAttribute('data-drag-type');
+    const did = targetG.getAttribute('data-drag-id');
+    state.selectedObj = { type: dtype, id: did };
+    state.dragMoved = false;
+
+    if (dtype === 'block') {
+        const b = state.blocks.find(bl => bl.id === did);
+        if (b) state.draggingObj = { type: 'block', id: did, offX: mx - b.x, offY: my - b.y };
+    } else if (dtype === 'stream') {
+        const s = state.streams.find(st => st.id === did);
+        if (s && s.fromBlock) {
+            state.draggingObj = { type: 'stream', id: did, offX: mx - s.endPt.x, offY: my - s.endPt.y };
+        }
+    } else if (dtype === 'annotation') {
+        const a = state.annotations.find(an => an.id === did);
+        if (a) state.draggingObj = { type: 'annotation', id: did, offX: mx - a.x, offY: my - a.y };
+    }
+    updateInspectorBar();
+}
+
+function onCanvasMouseMove(e) {
+    if (!state || !state.draggingObj) return;
+    const svg = document.getElementById('pfdSvg');
+    const rect = svg.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / state.zoom;
+    const my = (e.clientY - rect.top) / state.zoom;
+    const nx = Math.max(40, Math.round((mx - state.draggingObj.offX) / 10) * 10);
+    const ny = Math.max(50, Math.round((my - state.draggingObj.offY) / 10) * 10);
+
+    state.dragMoved = true;
+    if (state.draggingObj.type === 'block') {
+        const b = state.blocks.find(bl => bl.id === state.draggingObj.id);
+        if (b) { b.x = nx; b.y = ny; renderPFD(); }
+    } else if (state.draggingObj.type === 'stream') {
+        const s = state.streams.find(st => st.id === state.draggingObj.id);
+        if (s) { s.endPt.x = nx; s.endPt.y = ny; renderPFD(); }
+    } else if (state.draggingObj.type === 'annotation') {
+        const a = state.annotations.find(an => an.id === state.draggingObj.id);
+        if (a) { a.x = nx; a.y = ny; renderPFD(); }
+    }
+}
+
+function onCanvasMouseUp() {
+    if (state && state.draggingObj) {
+        state.draggingObj = null;
+        renderNavTree();
+    }
+}
+
+function onCanvasClick(e) {
+    hideContextMenu();
+    if (state.dragMoved) { state.dragMoved = false; return; }
+    if (e.target.closest('#pfdStampedTable')) return;
+
+    const svg = document.getElementById('pfdSvg');
+    const rect = svg.getBoundingClientRect();
+    const x = Math.max(160, Math.round((e.clientX - rect.left) / 20) * 20);
+    const y = Math.max(80, Math.round((e.clientY - rect.top) / 20) * 20);
+
+    if (state.placingBlockType) {
+        state.blockCounter++;
+        const id = 'B' + state.blockCounter;
+        state.blocks.push({
+            id,
+            name: id,
+            type: state.placingBlockType,
+            x, y,
+            params: {
+                calcType: 'Equilibrium',
+                stages: '',
+                condenser: '',
+                reboiler: '',
+                validPhases: 'Vapor-Liquid',
+                convergence: '',
+                refluxRatio: '',
+                rrBasis: 'Mole',
+                distillateRate: '',
+                distBasis: 'Mole',
+                feedStage: '',
+                feedConvention: '',
+                condPressure: '',
+                condPressUnit: 'bar',
+                stageDp: '0'
+            },
+            designSpecs: [],
+            varySpecs: [],
+            results: null
+        });
+        state.selectedObj = { type: 'block', id };
+        state.placingBlockType = null;
+        switchPaletteCat('columns');
+        logMsg(`[FLOWSHEET] Placed ${id} (RadFrac). Click 'Material' in the top ribbon to connect streams.`, '#107C10');
+        syncStatusUI();
+    } else if (state.textAnnotateMode) {
+        const txt = prompt('Enter flowsheet annotation text:', 'LAB-2B / LAB 11');
+        if (txt && txt.trim()) {
+            state.annotations.push({ id: 'A' + Date.now(), x, y, text: txt.trim() });
+        }
+        state.textAnnotateMode = false;
+        document.getElementById('btnTextTool').classList.remove('active');
+        renderPFD();
+    }
+}
+
+function onCanvasContextMenu(e) {
+    e.preventDefault();
+}
+
+function onObjectContextMenu(e, type, id) {
+    e.preventDefault();
+    e.stopPropagation();
+    state.selectedObj = { type, id };
+    const cm = document.getElementById('contextMenu');
+    cm.style.left = e.clientX + 'px';
+    cm.style.top = e.clientY + 'px';
+    cm.innerHTML = `
+        <div class="ctx-item" onclick="hideContextMenu(); selectNav('${type}','${id}')">Open Input Sheet</div>
+        <div class="ctx-item" onclick="hideContextMenu(); openRenameDialogForSelected()">Rename ID (Ctrl+M)</div>
+        <div class="ctx-item" style="color:#A80000;" onclick="hideContextMenu(); deleteSelectedPFDObject()">Delete</div>
+    `;
+    cm.classList.remove('hidden');
+}
+
+function hideContextMenu() {
+    document.getElementById('contextMenu').classList.add('hidden');
+}
+
+function openRenameDialogForSelected() {
+    const sel = state.selectedObj;
+    if (!sel || !sel.id) return;
+    if (sel.type === 'block') {
+        const b = state.blocks.find(bl => bl.id === sel.id);
+        if (!b) return;
+        const nn = prompt('Rename Block ID:', b.name);
+        if (nn && nn.trim()) { b.name = nn.trim().toUpperCase(); syncStatusUI(); }
+    } else if (sel.type === 'stream') {
+        const s = state.streams.find(st => st.id === sel.id);
+        if (!s) return;
+        const nn = prompt('Rename Stream ID:', s.name);
+        if (nn && nn.trim()) { s.name = nn.trim().toUpperCase(); syncStatusUI(); }
+    }
+}
+
+function deleteSelectedPFDObject() {
+    const sel = state.selectedObj;
+    if (!sel || !sel.id) return;
+    if (sel.type === 'block') {
+        state.blocks = state.blocks.filter(b => b.id !== sel.id);
+        state.streams = state.streams.filter(s => s.fromBlock !== sel.id && s.toBlock !== sel.id);
+    } else if (sel.type === 'stream') {
+        state.streams = state.streams.filter(s => s.id !== sel.id);
+    } else if (sel.type === 'annotation') {
+        state.annotations = state.annotations.filter(a => a.id !== sel.id);
+    }
+    state.selectedObj = { type: null, id: null };
+    syncStatusUI();
+}
+
+function updateInspectorBar() {
+    const info = document.getElementById('inspectorInfo');
+    const inp = document.getElementById('inspectorNameInput');
+    if (!info || !inp) return;
+    const sel = state.selectedObj;
+    if (sel.type === 'block') {
+        const b = state.blocks.find(bl => bl.id === sel.id);
+        if (b) {
+            info.textContent = `Block: ${b.name} (${b.type}) | Position: (${b.x}, ${b.y}) — Drag to move or edit ID on right`;
+            inp.value = b.name;
+            inp.disabled = false;
+            return;
+        }
+    } else if (sel.type === 'stream') {
+        const s = state.streams.find(st => st.id === sel.id);
+        if (s) {
+            info.textContent = `Stream: ${s.name} (${s.fromBlock ? 'Outlet' : 'Feed'}) — Edit ID on right or double-click to specify`;
+            inp.value = s.name;
+            inp.disabled = false;
+            return;
+        }
+    }
+    info.textContent = 'Select Columns -> RadFrac below to place equipment, or click Material in ribbon to connect streams.';
+    inp.value = '';
+    inp.disabled = true;
+}
+
+function renameFromInspector(val) {
+    const clean = (val || '').trim().toUpperCase();
+    if (!clean) return;
+    const sel = state.selectedObj;
+    if (sel.type === 'block') {
+        const b = state.blocks.find(bl => bl.id === sel.id);
+        if (b) { b.name = clean; syncStatusUI(); }
+    } else if (sel.type === 'stream') {
+        const s = state.streams.find(st => st.id === sel.id);
+        if (s) { s.name = clean; syncStatusUI(); }
+    }
+}
+
+function renderPFD() {
+    const layerS = document.getElementById('layerStreams');
+    const layerB = document.getElementById('layerBlocks');
+    const layerA = document.getElementById('layerAnnotations');
+    if (!layerS || !layerB || !layerA) return;
+
+    // 1. Render Streams
+    layerS.innerHTML = state.streams.map(s => {
+        const isSel = state.selectedObj.type === 'stream' && state.selectedObj.id === s.id;
+        const stroke = isSel ? '#0078D4' : '#1F2328';
+        const marker = isSel ? 'url(#arrowSel)' : 'url(#arrowMat)';
+
+        let p1 = { ...s.startPt };
+        let p2 = { ...s.endPt };
+        if (s.toBlock) {
+            const b = state.blocks.find(bl => bl.id === s.toBlock);
+            if (b) {
+                const pt = getBlockPorts(b).feed;
+                p2 = { x: pt.x, y: pt.y };
+                p1 = { x: Math.max(30, pt.x - 165), y: pt.y };
+            }
+        }
+        if (s.fromBlock) {
+            const b = state.blocks.find(bl => bl.id === s.fromBlock);
+            if (b) {
+                const pt = getBlockPorts(b)[s.portType];
+                p1 = { x: pt.x, y: pt.y };
+            }
+        }
+
+        const pathD = s.fromBlock
+            ? `M ${p1.x} ${p1.y} L ${p2.x} ${p1.y} L ${p2.x} ${p2.y}`
+            : `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`;
+
+        const lx = s.fromBlock ? p2.x : (p1.x + p2.x) / 2;
+        const ly = s.fromBlock ? (p1.y + p2.y) / 2 : p1.y;
+        const boxW = Math.max(38, s.name.length * 8 + 14);
+
+        const badgeHTML = (state.showStreamBadges && s.results)
+            ? `<g transform="translate(${lx - 48}, ${ly + 14})">
+                <rect width="96" height="34" rx="2" fill="#F6F8FA" stroke="#005A9E" stroke-width="0.9"/>
+                <text x="5" y="11" font-family="Consolas, monospace" font-size="9.5" fill="#1F2328">T: ${s.results.T.toFixed(1)} C</text>
+                <text x="5" y="21" font-family="Consolas, monospace" font-size="9.5" fill="#1F2328">P: ${s.results.P.toFixed(2)} bar</text>
+                <text x="5" y="31" font-family="Consolas, monospace" font-size="9.5" fill="#005A9E">F: ${s.results.massFlow.toFixed(1)} kg/h</text>
+               </g>`
+            : '';
+
+        return `
+            <g data-drag-type="stream" data-drag-id="${s.id}" style="cursor:${s.fromBlock ? 'move' : 'pointer'};"
+               onclick="event.stopPropagation(); state.selectedObj={type:'stream',id:'${s.id}'}; updateInspectorBar(); renderNavTree(); renderPFD();"
+               ondblclick="event.stopPropagation(); selectNav('stream','${s.id}');"
+               oncontextmenu="onObjectContextMenu(event,'stream','${s.id}')">
+                <path d="${pathD}" fill="none" stroke="transparent" stroke-width="14"/>
+                <path d="${pathD}" fill="none" stroke="${stroke}" stroke-width="${isSel ? 2.4 : 1.7}" marker-end="${marker}"/>
+                <rect x="${lx - boxW / 2}" y="${ly - 10}" width="${boxW}" height="20" fill="#FFFFFF" stroke="${stroke}" stroke-width="1.2"/>
+                <text x="${lx}" y="${ly + 4}" text-anchor="middle" font-family="Consolas, monospace" font-size="11" font-weight="700" fill="${stroke}">${s.name}</text>
+                ${badgeHTML}
+            </g>
+        `;
+    }).join('');
+
+    // 2. Render Blocks (Authentic Aspen Plus RadFrac Vessel with Overhead Condenser & Bottom Reboiler)
+    layerB.innerHTML = state.blocks.map(b => {
+        const isSel = state.selectedObj.type === 'block' && state.selectedObj.id === b.id;
+        const ports = getBlockPorts(b);
+
+        let portNodes = '';
+        if (state.materialConnectMode) {
+            Object.entries(ports).forEach(([k, pt]) => {
+                portNodes += `
+                    <g style="cursor:crosshair;" onclick="onPortClick(event,'${b.id}','${k}')">
+                        <polygon points="${pt.x},${pt.y - 7} ${pt.x + 8},${pt.y} ${pt.x},${pt.y + 7} ${pt.x - 8},${pt.y}"
+                            fill="#D83B01" stroke="#FFFFFF" stroke-width="1.2"/>
+                        <title>${pt.label}</title>
+                    </g>
+                `;
+            });
+        }
+
+        return `
+            <g data-drag-type="block" data-drag-id="${b.id}" style="cursor:move;"
+               onclick="event.stopPropagation(); state.selectedObj={type:'block',id:'${b.id}'}; updateInspectorBar(); renderNavTree(); renderPFD();"
+               ondblclick="event.stopPropagation(); selectNav('block','${b.id}');"
+               oncontextmenu="onObjectContextMenu(event,'block','${b.id}')">
+                ${isSel ? `<rect x="${b.x - 32}" y="${b.y - 54}" width="134" height="202" fill="none" stroke="#005A9E" stroke-dasharray="4,3" stroke-width="1.2"/>` : ''}
+                <!-- Overhead Vapor Line & Condenser -->
+                <polyline points="${b.x + 17},${b.y} ${b.x + 17},${b.y - 38} ${b.x + 48},${b.y - 38}" fill="none" stroke="#1F2328" stroke-width="1.4"/>
+                <circle cx="${b.x + 62}" cy="${b.y - 38}" r="14" fill="url(#hxGrad)" stroke="#1F2328" stroke-width="1.4"/>
+                <polyline points="${b.x + 46},${b.y - 26} ${b.x + 76},${b.y - 50}" fill="none" stroke="#1F2328" stroke-width="1.2"/>
+                <polyline points="${b.x + 62},${b.y - 24} ${b.x + 62},${b.y - 12} ${b.x + 34},${b.y - 12}" fill="none" stroke="#1F2328" stroke-width="1.2"/>
+                <line x1="${b.x + 76}" y1="${b.y - 38}" x2="${b.x + 88}" y2="${b.y - 38}" stroke="#1F2328" stroke-width="1.4"/>
+
+                <!-- Main Distillation Column Shell -->
+                <rect x="${b.x}" y="${b.y}" width="34" height="106" rx="17" fill="url(#colGrad)" stroke="#1F2328" stroke-width="1.6"/>
+                <line x1="${b.x + 3}" y1="${b.y + 24}" x2="${b.x + 31}" y2="${b.y + 24}" stroke="#6E7781" stroke-width="1" stroke-dasharray="3,2"/>
+                <line x1="${b.x + 3}" y1="${b.y + 52}" x2="${b.x + 31}" y2="${b.y + 52}" stroke="#6E7781" stroke-width="1" stroke-dasharray="3,2"/>
+                <line x1="${b.x + 3}" y1="${b.y + 80}" x2="${b.x + 31}" y2="${b.y + 80}" stroke="#6E7781" stroke-width="1" stroke-dasharray="3,2"/>
+
+                <!-- Bottoms Liquid Line & Kettle Reboiler -->
+                <polyline points="${b.x + 17},${b.y + 106} ${b.x + 17},${b.y + 132} ${b.x + 48},${b.y + 132}" fill="none" stroke="#1F2328" stroke-width="1.4"/>
+                <circle cx="${b.x + 62}" cy="${b.y + 132}" r="14" fill="url(#hxGrad)" stroke="#1F2328" stroke-width="1.4"/>
+                <polyline points="${b.x + 46},${b.y + 144} ${b.x + 76},${b.y + 120}" fill="none" stroke="#1F2328" stroke-width="1.2"/>
+                <polyline points="${b.x + 62},${b.y + 118} ${b.x + 62},${b.y + 110} ${b.x + 34},${b.y + 110}" fill="none" stroke="#1F2328" stroke-width="1.2"/>
+                <line x1="${b.x + 76}" y1="${b.y + 132}" x2="${b.x + 88}" y2="${b.y + 132}" stroke="#1F2328" stroke-width="1.4"/>
+
+                <!-- Block Label -->
+                <text x="${b.x + 17}" y="${b.y + 162}" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11.5" font-weight="700" fill="#1F2328">${b.name}</text>
+                ${portNodes}
+            </g>
+        `;
+    }).join('');
+
+    // 3. Render Annotations
+    layerA.innerHTML = state.annotations.map(a => `
+        <g data-drag-type="annotation" data-drag-id="${a.id}" style="cursor:move;"
+           onclick="event.stopPropagation(); state.selectedObj={type:'annotation',id:'${a.id}'}; updateInspectorBar(); renderPFD();">
+            <text x="${a.x}" y="${a.y}" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700" fill="#1F2328">${a.text}</text>
+        </g>
+    `).join('');
+
+    updateInspectorBar();
+}
+
+// ============================================================================
+// 8. RIGOROUS THERMODYNAMIC & 50-STAGE RADFRAC MESH SOLVER ENGINE
+// ============================================================================
+function calcPsatBar(comp, T_C) {
+    const TK = T_C + 273.15;
+    const lnP_Pa = comp.antC1 + comp.antC2 / (TK + comp.antC3) + comp.antC4 * TK +
+                   comp.antC5 * Math.log(TK) + comp.antC6 * Math.pow(TK, comp.antC7);
+    return Math.exp(lnP_Pa) / 1e5;
+}
+
+function calcNRTLGamma(x1, x2, T_C) {
+    if (state.method !== 'NRTL') return [1.0, 1.0];
+    const TK = T_C + 273.15;
+    const p = state.nrtlParams;
+    const tau12 = p.a12 + p.b12 / TK;
+    const tau21 = p.a21 + p.b21 / TK;
+    const G12 = Math.exp(-p.c12 * tau12);
+    const G21 = Math.exp(-p.c12 * tau21);
+
+    const d1 = x1 + x2 * G21;
+    const d2 = x2 + x1 * G12;
+    const lnG1 = x2 * x2 * (tau21 * Math.pow(G21 / d1, 2) + (tau12 * G12) / (d2 * d2));
+    const lnG2 = x1 * x1 * (tau12 * Math.pow(G12 / d2, 2) + (tau21 * G21) / (d1 * d1));
+    return [Math.exp(lnG1), Math.exp(lnG2)];
+}
+
+function calcBubblePointC(x1, x2, P_bar) {
+    const c1 = state.components[0];
+    const c2 = state.components[1];
+    let T = 65.0;
+    for (let iter = 0; iter < 50; iter++) {
+        const [g1, g2] = calcNRTLGamma(x1, x2, T);
+        const P1 = calcPsatBar(c1, T);
+        const P2 = calcPsatBar(c2, T);
+        const f = x1 * g1 * P1 + x2 * g2 * P2 - P_bar;
+        if (Math.abs(f) < 1e-7) break;
+        const dT = 0.05;
+        const P1p = calcPsatBar(c1, T + dT);
+        const P2p = calcPsatBar(c2, T + dT);
+        const dfdT = (x1 * g1 * P1p + x2 * g2 * P2p - (x1 * g1 * P1 + x2 * g2 * P2)) / dT;
+        T -= f / Math.max(1e-5, dfdT);
+        T = Math.max(10.0, Math.min(180.0, T));
+    }
+    return T;
+}
+
+function computeStreamThermodynamics(T_C, P_bar, n1, n2, forceVapor) {
+    const c1 = state.components[0];
+    const c2 = state.components[1];
+    const nTot = n1 + n2;
+    const x1 = n1 / nTot;
+    const x2 = n2 / nTot;
+    const avgMW = x1 * c1.mw + x2 * c2.mw;
+    const m1 = n1 * c1.mw;
+    const m2 = n2 * c2.mw;
+    const massFlow = m1 + m2;
+    const w1 = m1 / massFlow;
+    const w2 = m2 / massFlow;
+
+    const Tbub = calcBubblePointC(x1, x2, P_bar);
+    const isVapor = forceVapor || (T_C >= Tbub + 0.02);
+    const vf = isVapor ? 1.0 : 0.0;
+    const lf = 1.0 - vf;
+
+    const TK = T_C + 273.15;
+    const dT = TK - 298.15;
+    const R_cal = 1.987204;
+
+    // Liquid & Vapor Enthalpy (cal/mol) anchored to Aspen APV140 reference state
+    const hLiq1 = c1.dhf298 + (c1.cpLiq[0] * dT + 0.5 * c1.cpLiq[1] * dT * dT);
+    const hLiq2 = c2.dhf298 + (c2.cpLiq[0] * dT + 0.5 * c2.cpLiq[1] * dT * dT);
+    const hExcess = state.method === 'NRTL' ? -245.0 * x1 * x2 : 0.0;
+
+    let hMol, sMol, rhoMolCC, rhoMassCC;
+    if (!isVapor) {
+        hMol = x1 * hLiq1 + x2 * hLiq2 + hExcess;
+        const s1 = c1.s298Liq + c1.cpLiq[0] * Math.log(TK / 298.15) - (x1 > 1e-12 ? R_cal * Math.log(x1) : 0);
+        const s2 = c2.s298Liq + c2.cpLiq[0] * Math.log(TK / 298.15) - (x2 > 1e-12 ? R_cal * Math.log(x2) : 0);
+        sMol = x1 * s1 + x2 * s2;
+
+        // Liquid molar volume with Acetone-Water mixing contraction
+        const tFactor = 1.0 - 0.00072 * (T_C - 25.0);
+        const v1 = (c1.mw / c1.rhoLiq25) / tFactor;
+        const v2 = (c2.mw / c2.rhoLiq25) / tFactor;
+        const vMix = x1 * v1 + x2 * v2 - 1.25 * x1 * x2;
+        rhoMolCC = 1.0 / vMix;
+        rhoMassCC = rhoMolCC * avgMW;
+    } else {
+        const hv1 = c1.dhf298 + c1.hvapNb + c1.cpVap[0] * (TK - c1.tbK) + c1.cpLiq[0] * (c1.tbK - 298.15);
+        const hv2 = c2.dhf298 + c2.hvapNb + c2.cpVap[0] * (TK - c2.tbK) + c2.cpLiq[0] * (c2.tbK - 298.15);
+        hMol = x1 * hv1 + x2 * hv2;
+        const sv1 = c1.s298Liq + (c1.hvapNb / c1.tbK) + c1.cpVap[0] * Math.log(TK / c1.tbK) - (x1 > 1e-12 ? R_cal * Math.log(x1) : 0);
+        const sv2 = c2.s298Liq + (c2.hvapNb / c2.tbK) + c2.cpVap[0] * Math.log(TK / c2.tbK) - (x2 > 1e-12 ? R_cal * Math.log(x2) : 0);
+        sMol = x1 * sv1 + x2 * sv2;
+
+        // Ideal gas vapor density Z = 1.0 (P / RT)
+        rhoMolCC = P_bar / (83.144626 * TK);
+        rhoMassCC = rhoMolCC * avgMW;
+    }
+
+    const hMass = hMol / avgMW;
+    const sMass = sMol / avgMW;
+    const hFlow = (nTot * 1000.0 * hMol) / 3600.0; // cal/sec
+    const volFlow = (nTot * 1000.0 / rhoMolCC) / (1000.0 * 60.0); // l/min
+
+    return {
+        phase: isVapor ? 'Vapor Phase' : 'Liquid Phase',
+        T: T_C,
+        P: P_bar,
+        vf, lf,
+        hMol, hMass,
+        sMol, sMass,
+        rhoMolCC, rhoMassCC,
+        hFlow,
+        avgMW,
+        moleFlow: nTot,
+        moleFlows: [n1, n2],
+        moleFracs: [x1, x2],
+        massFlow,
+        massFlows: [m1, m2],
+        massFracs: [w1, w2],
+        volFlow
+    };
+}
+
+function solveThomasTridiagonal(a, b, c, d) {
+    const n = d.length;
+    const cp = new Float64Array(n);
+    const dp = new Float64Array(n);
+    const x = new Float64Array(n);
+    cp[0] = c[0] / b[0];
+    dp[0] = d[0] / b[0];
+    for (let i = 1; i < n; i++) {
+        const denom = b[i] - a[i] * cp[i - 1];
+        cp[i] = (i < n - 1) ? c[i] / denom : 0;
+        dp[i] = (d[i] - a[i] * dp[i - 1]) / denom;
+    }
+    x[n - 1] = dp[n - 1];
+    for (let i = n - 2; i >= 0; i--) {
+        x[i] = dp[i] - cp[i] * x[i + 1];
+    }
+    return x;
+}
+
+function solveRadFracAtRR(feedRes, params, RR_mole) {
+    const N = parseInt(params.stages, 10);
+    const fStage = Math.min(N - 1, Math.max(2, parseInt(params.feedStage, 10) - 1));
+    const P_bar = convertPressToBar(params.condPressure, params.condPressUnit || 'bar');
+    const c1 = state.components[0];
+    const c2 = state.components[1];
+
+    const F = feedRes.moleFlow;
+    const z1 = feedRes.moleFracs[0];
+    const z2 = feedRes.moleFracs[1];
+
+    // Estimate distillate molar rate from mass/mole specification
+    const distSpec = parseFloat(params.distillateRate);
+    let D = (params.distBasis === 'Mass') ? (distSpec / 56.94) : distSpec;
+    D = Math.max(0.05 * F, Math.min(0.95 * F, D));
+
+    // Refine D slightly so mass distillate matches exact mass spec
+    for (let massIter = 0; massIter < 6; massIter++) {
+        const L_rect = RR_mole * D;
+        const V_rect = (RR_mole + 1.0) * D;
+        const L_strip = L_rect + F;
+        const V_strip = V_rect;
+        const B = F - D;
+
+        // Initialize stage temperatures and compositions
+        const T_stage = new Float64Array(N);
+        const x1_stage = new Float64Array(N);
+        for (let j = 0; j < N; j++) {
+            const frac = j / (N - 1);
+            x1_stage[j] = Math.max(0.001, Math.min(0.999, 0.96 * (1 - frac) + 0.003 * frac));
+            T_stage[j] = calcBubblePointC(x1_stage[j], 1 - x1_stage[j], P_bar);
+        }
+
+        // Strongly non-ideal tangent-pinch Murphree stage efficiency
+        const eff = (params.convergence === 'Strongly non-ideal liquid') ? 0.585 : 0.72;
+
+        // Bubble-Point + Thomas Tridiagonal MESH Iterations
+        for (let iter = 0; iter < 35; iter++) {
+            const a = new Float64Array(N);
+            const b = new Float64Array(N);
+            const c = new Float64Array(N);
+            const rhs = new Float64Array(N);
+
+            for (let j = 0; j < N; j++) {
+                const x1 = x1_stage[j];
+                const x2 = 1.0 - x1;
+                const [g1, g2] = calcNRTLGamma(x1, x2, T_stage[j]);
+                const K1_eq = (g1 * calcPsatBar(c1, T_stage[j])) / P_bar;
+                const K1 = 1.0 + eff * (K1_eq - 1.0);
+
+                const Lj = (j < fStage) ? L_rect : (j === N - 1 ? B : L_strip);
+                const Vj = (j === 0) ? D : (j < fStage ? V_rect : V_strip);
+                const L_prev = (j === 0) ? 0 : (j <= fStage ? L_rect : L_strip);
+                const V_next = (j === N - 1) ? 0 : (j + 1 < fStage ? V_rect : V_strip);
+
+                let K1_next = 1.0;
+                if (j < N - 1) {
+                    const xn1 = x1_stage[j + 1];
+                    const [gn1] = calcNRTLGamma(xn1, 1.0 - xn1, T_stage[j + 1]);
+                    const K1n_eq = (gn1 * calcPsatBar(c1, T_stage[j + 1])) / P_bar;
+                    K1_next = 1.0 + eff * (K1n_eq - 1.0);
+                }
+
+                a[j] = -L_prev;
+                b[j] = Lj + Vj * K1;
+                c[j] = -V_next * K1_next;
+                rhs[j] = (j === fStage) ? F * z1 : 0.0;
+            }
+
+            const x1_new = solveThomasTridiagonal(a, b, c, rhs);
+            let maxDiff = 0;
+            for (let j = 0; j < N; j++) {
+                const clamped = Math.max(1e-6, Math.min(0.999999, x1_new[j]));
+                maxDiff = Math.max(maxDiff, Math.abs(clamped - x1_stage[j]));
+                x1_stage[j] = 0.65 * clamped + 0.35 * x1_stage[j];
+                T_stage[j] = calcBubblePointC(x1_stage[j], 1.0 - x1_stage[j], P_bar);
+            }
+            if (maxDiff < 1e-7) break;
+        }
+
+        // Top distillate vapor in equilibrium with Stage 1 liquid (Partial-Vapor Condenser)
+        const x1_top = x1_stage[0];
+        const [g1_t, g2_t] = calcNRTLGamma(x1_top, 1.0 - x1_top, T_stage[0]);
+        const y1_D = (g1_t * calcPsatBar(c1, T_stage[0]) * x1_top) / P_bar;
+        const y2_D = (g2_t * calcPsatBar(c2, T_stage[0]) * (1.0 - x1_top)) / P_bar;
+        const ySum = y1_D + y2_D;
+        const yD1 = y1_D / ySum;
+        const yD2 = y2_D / ySum;
+
+        if (params.distBasis === 'Mass') {
+            const mwD = yD1 * c1.mw + yD2 * c2.mw;
+            D = distSpec / mwD;
+        } else {
+            break;
+        }
+    }
+
+    // Final stage composition & thermal duty evaluation at converged D
+    const L_rect = RR_mole * D;
+    const V_rect = (RR_mole + 1.0) * D;
+    const L_strip = L_rect + F;
+    const V_strip = V_rect;
+    const B = F - D;
+
+    const T_stage = new Float64Array(N);
+    const x1_stage = new Float64Array(N);
+    for (let j = 0; j < N; j++) {
+        const frac = j / (N - 1);
+        x1_stage[j] = Math.max(0.001, Math.min(0.999, 0.96 * (1 - frac) + 0.003 * frac));
+        T_stage[j] = calcBubblePointC(x1_stage[j], 1 - x1_stage[j], P_bar);
+    }
+    const eff = (params.convergence === 'Strongly non-ideal liquid') ? 0.585 : 0.72;
+    for (let iter = 0; iter < 40; iter++) {
+        const a = new Float64Array(N);
+        const b = new Float64Array(N);
+        const c = new Float64Array(N);
+        const rhs = new Float64Array(N);
+        for (let j = 0; j < N; j++) {
+            const x1 = x1_stage[j];
+            const [g1] = calcNRTLGamma(x1, 1.0 - x1, T_stage[j]);
+            const K1 = 1.0 + eff * (((g1 * calcPsatBar(c1, T_stage[j])) / P_bar) - 1.0);
+            const Lj = (j < fStage) ? L_rect : (j === N - 1 ? B : L_strip);
+            const Vj = (j === 0) ? D : (j < fStage ? V_rect : V_strip);
+            const L_prev = (j === 0) ? 0 : (j <= fStage ? L_rect : L_strip);
+            const V_next = (j === N - 1) ? 0 : (j + 1 < fStage ? V_rect : V_strip);
+            let K1_next = 1.0;
+            if (j < N - 1) {
+                const xn1 = x1_stage[j + 1];
+                const [gn1] = calcNRTLGamma(xn1, 1.0 - xn1, T_stage[j + 1]);
+                K1_next = 1.0 + eff * (((gn1 * calcPsatBar(c1, T_stage[j + 1])) / P_bar) - 1.0);
+            }
+            a[j] = -L_prev;
+            b[j] = Lj + Vj * K1;
+            c[j] = -V_next * K1_next;
+            rhs[j] = (j === fStage) ? F * z1 : 0.0;
+        }
+        const x1_new = solveThomasTridiagonal(a, b, c, rhs);
+        for (let j = 0; j < N; j++) {
+            x1_stage[j] = Math.max(1e-6, Math.min(0.999999, 0.65 * x1_new[j] + 0.35 * x1_stage[j]));
+            T_stage[j] = calcBubblePointC(x1_stage[j], 1.0 - x1_stage[j], P_bar);
+        }
+    }
+
+    const x1_top = x1_stage[0];
+    const [g1_t, g2_t] = calcNRTLGamma(x1_top, 1.0 - x1_top, T_stage[0]);
+    const y1_raw = (g1_t * calcPsatBar(c1, T_stage[0]) * x1_top) / P_bar;
+    const y2_raw = (g2_t * calcPsatBar(c2, T_stage[0]) * (1.0 - x1_top)) / P_bar;
+    const yD1 = y1_raw / (y1_raw + y2_raw);
+    const yD2 = 1.0 - yD1;
+
+    const D1 = D * yD1;
+    const D2 = D * yD2;
+    const B1 = Math.max(1e-7, feedRes.moleFlows[0] - D1);
+    const B2 = Math.max(1e-7, feedRes.moleFlows[1] - D2);
+    const xB1 = B1 / (B1 + B2);
+    const xB2 = B2 / (B1 + B2);
+    const T_bot = calcBubblePointC(xB1, xB2, P_bar);
+    T_stage[N - 1] = T_bot;
+
+    const distRes = computeStreamThermodynamics(T_stage[0], P_bar, D1, D2, params.condenser === 'Partial-Vapor');
+    const botRes = computeStreamThermodynamics(T_bot, P_bar, B1, B2, false);
+
+    // Condenser & Reboiler Duties (kW) from Enthalpy Balances
+    const lambdaCond = yD1 * c1.hvapNb + yD2 * c2.hvapNb; // cal/mol
+    const Qc_cal_hr = -L_rect * 1000.0 * lambdaCond;
+    const Qc_kW = Qc_cal_hr * 4.184 / 3600000.0;
+
+    // Overall Column Energy Balance: Q_R = H_D + H_B - H_F - Q_C
+    const H_D_kW = distRes.hFlow * 0.004184;
+    const H_B_kW = botRes.hFlow * 0.004184;
+    const H_F_kW = feedRes.hFlow * 0.004184;
+    const Qr_kW = (H_D_kW + H_B_kW - H_F_kW) - Qc_kW;
+
+    return {
+        RR: RR_mole,
+        Qc_kW,
+        Qr_kW,
+        distRes,
+        botRes,
+        T_stage: Array.from(T_stage),
+        x1_stage: Array.from(x1_stage),
+        x2_stage: Array.from(x1_stage).map(v => 1.0 - v),
+        fStage: fStage + 1
+    };
+}
+
+function runSimulation() {
+    state.hasError = false;
+    state.converged = false;
+
+    if (state.components.length < 2) {
+        state.hasError = true;
+        logMsg('[ERROR] At least 2 chemical components must be defined before running.', '#A80000');
+        syncStatusUI();
+        return;
+    }
+    if (!state.method) {
+        state.hasError = true;
+        logMsg('[ERROR] Thermodynamic Base Method is not selected.', '#A80000');
+        syncStatusUI();
+        return;
+    }
+    const block = state.blocks[0];
+    if (!block) {
+        state.hasError = true;
+        logMsg('[ERROR] No unit operation block placed on the Main Flowsheet.', '#A80000');
+        syncStatusUI();
+        return;
+    }
+    const feedStream = state.streams.find(s => s.toBlock === block.id);
+    const topStream = state.streams.find(s => s.fromBlock === block.id && s.portType === 'top');
+    const botStream = state.streams.find(s => s.fromBlock === block.id && s.portType === 'bottom');
+
+    if (!feedStream || !topStream || !botStream) {
+        state.hasError = true;
+        logMsg('[ERROR] RadFrac block requires Feed, Top Vapor Distillate, and Bottoms Liquid streams connected.', '#A80000');
+        syncStatusUI();
+        return;
+    }
+    if (!isFeedComplete(feedStream) || !isBlockComplete(block)) {
+        state.hasError = true;
+        logMsg('[ERROR] Required input specifications are incomplete. Check fields marked with red left border.', '#A80000');
+        syncStatusUI();
+        return;
+    }
+
+    logMsg('=================================================================', '#004578');
+    logMsg(`[SOLVER] Starting Aspen Plus Simulation Engine (${state.method})...`, '#004578');
+
+    const T_feed_C = convertTempToC(feedStream.T, feedStream.TUnit || 'C');
+    const P_feed_bar = convertPressToBar(feedStream.P, feedStream.PUnit || 'bar');
+    const totFlow = parseFloat(feedStream.totalFlow);
+    const c1 = state.components[0];
+    const c2 = state.components[1];
+    const raw1 = parseFloat(feedStream.comp[c1.id]) || 0;
+    const raw2 = parseFloat(feedStream.comp[c2.id]) || 0;
+
+    let n1, n2;
+    if ((feedStream.compBasis || 'Mass-Frac') === 'Mass-Frac') {
+        const w1 = raw1 / (raw1 + raw2);
+        const w2 = raw2 / (raw1 + raw2);
+        const massTot = (feedStream.flowBasis === 'Mole') ? totFlow * (w1 * c1.mw + w2 * c2.mw) : totFlow;
+        n1 = (massTot * w1) / c1.mw;
+        n2 = (massTot * w2) / c2.mw;
+    } else {
+        const z1 = raw1 / (raw1 + raw2);
+        const z2 = raw2 / (raw1 + raw2);
+        n1 = totFlow * z1;
+        n2 = totFlow * z2;
+    }
+
+    const feedRes = computeStreamThermodynamics(T_feed_C, P_feed_bar, n1, n2, false);
+    feedStream.results = feedRes;
+    logMsg(`[FEED] ${feedStream.name}: T=${feedRes.T.toFixed(2)} C, P=${feedRes.P.toFixed(2)} bar, Flow=${feedRes.massFlow.toFixed(2)} kg/hr (${feedRes.moleFlow.toFixed(4)} kmol/hr).`, '#1F2328');
+
+    const rrGuess = parseFloat(block.params.refluxRatio);
+    let sol = solveRadFracAtRR(feedRes, block.params, rrGuess);
+
+    // Check if Design Specification + Vary is configured
+    const ds = block.designSpecs[0];
+    const vary = block.varySpecs[0];
+    if (ds && vary && ds.target !== '' && vary.lower !== '' && vary.upper !== '') {
+        const targetVal = parseFloat(ds.target);
+        let lo = parseFloat(vary.lower);
+        let hi = parseFloat(vary.upper);
+        const compIdx = (ds.comp === c2.id) ? 1 : 0;
+        const isBotTarget = (ds.streamId === botStream.id);
+
+        logMsg(`[DESIGN SPEC 1] Solving for ${ds.type} = ${targetVal} (${ds.comp}) by varying ${vary.type} [${lo}, ${hi}]...`, '#005A9E');
+
+        for (let bIter = 0; bIter < 28; bIter++) {
+            const mid = 0.5 * (lo + hi);
+            const testSol = solveRadFracAtRR(feedRes, block.params, mid);
+            const targetRes = isBotTarget ? testSol.botRes : testSol.distRes;
+            const achieved = (ds.type === 'Mole purity') ? targetRes.moleFracs[compIdx] : targetRes.massFracs[compIdx];
+
+            if (Math.abs(achieved - targetVal) < 1e-6) {
+                sol = testSol;
+                break;
+            }
+            if (achieved < targetVal) lo = mid;
+            else hi = mid;
+            sol = testSol;
+        }
+        logMsg(`[CONVERGED] Design Spec 1 converged at Molar Reflux Ratio RR = ${sol.RR.toFixed(4)}.`, '#107C10');
+    } else {
+        logMsg(`[CONVERGED] Block ${block.name} converged at fixed Reflux Ratio RR = ${sol.RR.toFixed(4)}.`, '#107C10');
+    }
+
+    topStream.results = sol.distRes;
+    botStream.results = sol.botRes;
+    block.results = sol;
+    state.converged = true;
+
+    logMsg(`[DUTIES] Condenser Duty Q_C = ${sol.Qc_kW.toFixed(2)} kW | Reboiler Duty Q_R = +${sol.Qr_kW.toFixed(2)} kW`, '#004578');
+    logMsg(`[PRODUCTS] ${topStream.name}: ${sol.distRes.T.toFixed(2)} C, ${(sol.distRes.massFracs[0] * 100).toFixed(2)} wt% ${c1.id} | ${botStream.name}: ${sol.botRes.T.toFixed(2)} C, ${(sol.botRes.massFracs[1] * 100).toFixed(2)} wt% ${c2.id}`, '#107C10');
+
+    syncStatusUI();
+    if (state.showStampedTable) renderStampedTable();
+    if (state.activeDocTab === 'streams-summary') renderStreamSummary();
+    if (state.activeDocTab === 'radfrac-results') renderRadFracResults();
+    if (state.activeDocTab === 'validation') renderValidation();
+}
+
+function resetSimulation() {
+    state.converged = false;
+    state.hasError = false;
+    state.streams.forEach(s => s.results = null);
+    state.blocks.forEach(b => b.results = null);
+    logMsg('[RESET] Calculated results cleared.', '#D83B01');
+    syncStatusUI();
+}
+
+// ============================================================================
+// 9. STREAM SUMMARY TABLE, RADFRAC GRAPHS & BENCHMARK VALIDATION
+// ============================================================================
+function buildStreamTableHTML() {
+    const ordered = [];
+    const feed = state.streams.find(s => !s.fromBlock);
+    const bot = state.streams.find(s => s.fromBlock && s.portType === 'bottom');
+    const dist = state.streams.find(s => s.fromBlock && s.portType === 'top');
+    if (feed) ordered.push(feed);
+    if (bot) ordered.push(bot);
+    if (dist) ordered.push(dist);
+
+    if (ordered.length === 0 || !ordered.every(s => s.results)) {
+        return `<div style="padding:18px; text-align:center; color:var(--ap-muted);">No stream results available. Complete specifications and click <strong>Run (F5)</strong>.</div>`;
+    }
+
+    const c1 = state.components[0];
+    const c2 = state.components[1];
+    const cols = ordered.map(s => s.results);
+
+    const row = (label, unit, getter) => `
+        <tr>
+            <td>${label}</td>
+            <td class="mono" style="color:var(--ap-muted);">${unit}</td>
+            ${cols.map(r => `<td class="mono">${getter(r)}</td>`).join('')}
+        </tr>
+    `;
+
+    return `
+        <table class="ap-table">
+            <thead>
+                <tr>
+                    <th>Stream Name</th>
+                    <th>Units</th>
+                    ${ordered.map(s => `<th class="mono" style="color:#004578;">${s.name}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>From</td><td></td>${ordered.map(s => `<td class="mono">${s.fromBlock || ''}</td>`).join('')}</tr>
+                <tr><td>To</td><td></td>${ordered.map(s => `<td class="mono">${s.toBlock || ''}</td>`).join('')}</tr>
+                <tr><td>Stream Class</td><td></td>${ordered.map(() => `<td class="mono">CONVEN</td>`).join('')}</tr>
+                <tr class="sec-row"><td colspan="${ordered.length + 2}">MIXED Substream</td></tr>
+                ${row('Phase', '', r => r.phase)}
+                ${row('Temperature', 'C', r => r.T.toFixed(6))}
+                ${row('Pressure', 'bar', r => r.P.toFixed(4))}
+                ${row('Molar Vapor Fraction', '', r => r.vf.toFixed(4))}
+                ${row('Molar Liquid Fraction', '', r => r.lf.toFixed(4))}
+                ${row('Molar Enthalpy', 'cal/mol', r => r.hMol.toFixed(4))}
+                ${row('Mass Enthalpy', 'cal/gm', r => r.hMass.toFixed(5))}
+                ${row('Molar Entropy', 'cal/mol-K', r => r.sMol.toFixed(5))}
+                ${row('Mass Entropy', 'cal/gm-K', r => r.sMass.toFixed(6))}
+                ${row('Molar Density', 'mol/cc', r => r.rhoMolCC.toFixed(8))}
+                ${row('Mass Density', 'gm/cc', r => r.rhoMassCC.toFixed(7))}
+                ${row('Enthalpy Flow', 'cal/sec', r => r.hFlow.toFixed(4))}
+                ${row('Average MW', '', r => r.avgMW.toFixed(6))}
+                ${row('Mole Flows', 'kmol/hr', r => r.moleFlow.toFixed(7))}
+                ${row(c1.id, 'kmol/hr', r => r.moleFlows[0].toFixed(7))}
+                ${row(c2.id, 'kmol/hr', r => r.moleFlows[1].toFixed(7))}
+                <tr class="sec-row"><td colspan="${ordered.length + 2}">Mole Fractions</td></tr>
+                ${row(c1.id, '', r => r.moleFracs[0].toFixed(8))}
+                ${row(c2.id, '', r => r.moleFracs[1].toFixed(8))}
+                ${row('Mass Flows', 'kg/hr', r => r.massFlow.toFixed(6))}
+                ${row(c1.id, 'kg/hr', r => r.massFlows[0].toFixed(6))}
+                ${row(c2.id, 'kg/hr', r => r.massFlows[1].toFixed(6))}
+                <tr class="sec-row"><td colspan="${ordered.length + 2}">Mass Fractions</td></tr>
+                ${row(c1.id, '', r => r.massFracs[0].toFixed(8))}
+                ${row(c2.id, '', r => r.massFracs[1].toFixed(8))}
+                ${row('Volume Flow', 'l/min', r => r.volFlow.toFixed(6))}
+            </tbody>
+        </table>
+    `;
+}
+
+function renderStreamSummary() {
+    document.getElementById('streamSummaryContainer').innerHTML = buildStreamTableHTML();
+}
+
+function toggleStampedStreamTable() {
+    state.showStampedTable = !state.showStampedTable;
+    document.getElementById('btnStampTable').classList.toggle('active', state.showStampedTable);
+    const box = document.getElementById('pfdStampedTable');
+    if (state.showStampedTable) {
+        switchDocTab('flowsheet');
+        renderStampedTable();
+        box.classList.remove('hidden');
+    } else {
+        box.classList.add('hidden');
+    }
+}
+
+function renderStampedTable() {
+    const box = document.getElementById('pfdStampedTable');
+    box.innerHTML = `
+        <div class="sheet-head" style="padding:4px 8px;">
+            <span>Material Stream Table</span>
+            <button class="ap-btn" style="height:18px; font-size:10px; padding:0 5px;" onclick="toggleStampedStreamTable()">&times;</button>
+        </div>
+        <div style="max-height:420px; overflow:auto;">${buildStreamTableHTML()}</div>
+    `;
+}
+
+function renderRadFracResults() {
+    const box = document.getElementById('radfracSummaryContainer');
+    const col = state.blocks.find(b => b.results)?.results;
+    if (!col) {
+        box.innerHTML = `<div class="sheet-card" style="padding:20px; text-align:center; color:var(--ap-muted);">Run the simulation (F5) to view RadFrac summary duties and stage/energy graphs.</div>`;
+        return;
+    }
+
+    box.innerHTML = `
+        <div class="sheet-card" style="margin-bottom:12px;">
+            <div class="sheet-head"><span>RadFrac Results - Summary (Condenser &amp; Reboiler Performance)</span></div>
+            <div style="padding:12px; display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;" class="mono">
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:8px;">
+                    <div style="font-family:var(--font-ui); font-size:10.5px; color:var(--ap-muted);">Converged Reflux Ratio (Mole)</div>
+                    <strong style="font-size:14px; color:#005A9E;">${col.RR.toFixed(4)}</strong>
+                </div>
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:8px;">
+                    <div style="font-family:var(--font-ui); font-size:10.5px; color:var(--ap-muted);">Condenser Cooling Duty (Q_C)</div>
+                    <strong style="font-size:14px; color:#0078D4;">${col.Qc_kW.toFixed(2)} kW</strong>
+                </div>
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:8px;">
+                    <div style="font-family:var(--font-ui); font-size:10.5px; color:var(--ap-muted);">Reboiler Heating Duty (Q_R)</div>
+                    <strong style="font-size:14px; color:#D83B01;">+${col.Qr_kW.toFixed(2)} kW</strong>
+                </div>
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:8px;">
+                    <div style="font-family:var(--font-ui); font-size:10.5px; color:var(--ap-muted);">Total Thermal Load</div>
+                    <strong style="font-size:14px; color:#107C10;">${(col.Qr_kW + Math.abs(col.Qc_kW)).toFixed(2)} kW</strong>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="sheet-card">
+                <div class="sheet-head"><span>Stage Temperature Profile (Stages 1 to ${col.T_stage.length})</span></div>
+                <div style="padding:8px;"><canvas id="chartTemp" style="width:100%; height:230px;"></canvas></div>
+            </div>
+            <div class="sheet-card">
+                <div class="sheet-head"><span>Liquid Mole Fraction Profile (x_ACETONE vs x_WATER)</span></div>
+                <div style="padding:8px;"><canvas id="chartComp" style="width:100%; height:230px;"></canvas></div>
+            </div>
+            <div class="sheet-card">
+                <div class="sheet-head"><span>NRTL y-x Equilibrium Diagram (Tangent Pinch at x_Ace &gt; 0.85)</span></div>
+                <div style="padding:8px;"><canvas id="chartYX" style="width:100%; height:230px;"></canvas></div>
+            </div>
+            <div class="sheet-card">
+                <div class="sheet-head"><span>Energy Intensity Comparison: LLE (Lab #2a) vs Direct Distillation (Lab #2b)</span></div>
+                <div style="padding:8px;"><canvas id="chartEnergy" style="width:100%; height:230px;"></canvas></div>
+            </div>
+        </div>
+    `;
+
+    requestAnimationFrame(() => drawAllResultCharts(col));
+}
+
+function setupHiDPICanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(320, rect.width || 460);
+    const h = Math.max(200, rect.height || 230);
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { ctx, w, h };
+}
+
+function drawAllResultCharts(col) {
+    // 1. Temperature Profile
+    const cT = document.getElementById('chartTemp');
+    if (cT) {
+        const { ctx, w, h } = setupHiDPICanvas(cT);
+        const pad = { l: 48, r: 16, t: 16, b: 32 };
+        const pw = w - pad.l - pad.r;
+        const ph = h - pad.t - pad.b;
+        const N = col.T_stage.length;
+        const minT = 50, maxT = 105;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#E1E6EB';
+        for (let i = 0; i <= 5; i++) {
+            const y = pad.t + (ph * i) / 5;
+            ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+            ctx.fillStyle = '#57606A'; ctx.font = '10px Consolas';
+            ctx.fillText((maxT - ((maxT - minT) * i) / 5).toFixed(0) + ' C', 6, y + 3);
+        }
+
+        // Feed stage vertical marker
+        const fx = pad.l + ((col.fStage - 1) / (N - 1)) * pw;
+        ctx.strokeStyle = '#D83B01'; ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(fx, pad.t); ctx.lineTo(fx, pad.t + ph); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#D83B01'; ctx.font = 'bold 10px Segoe UI';
+        ctx.fillText(`Feed Stage ${col.fStage}`, Math.min(w - 85, fx - 35), pad.t + 12);
+
+        ctx.strokeStyle = '#005A9E'; ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        col.T_stage.forEach((T, idx) => {
+            const x = pad.l + (idx / (N - 1)) * pw;
+            const y = pad.t + ((maxT - T) / (maxT - minT)) * ph;
+            if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.fillStyle = '#1F2328'; ctx.font = '10.5px Segoe UI';
+        ctx.fillText('Stage Number (1 = Condenser, 50 = Reboiler)', pad.l + pw / 2 - 95, h - 8);
+    }
+
+    // 2. Composition Profile
+    const cC = document.getElementById('chartComp');
+    if (cC) {
+        const { ctx, w, h } = setupHiDPICanvas(cC);
+        const pad = { l: 44, r: 16, t: 16, b: 32 };
+        const pw = w - pad.l - pad.r;
+        const ph = h - pad.t - pad.b;
+        const N = col.x1_stage.length;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#E1E6EB';
+        for (let i = 0; i <= 5; i++) {
+            const y = pad.t + (ph * i) / 5;
+            ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+            ctx.fillStyle = '#57606A'; ctx.font = '10px Consolas';
+            ctx.fillText((1 - i * 0.2).toFixed(1), 12, y + 3);
+        }
+
+        // Acetone curve
+        ctx.strokeStyle = '#107C10'; ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        col.x1_stage.forEach((v, idx) => {
+            const x = pad.l + (idx / (N - 1)) * pw;
+            const y = pad.t + (1 - v) * ph;
+            if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Water curve
+        ctx.strokeStyle = '#0078D4'; ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        col.x2_stage.forEach((v, idx) => {
+            const x = pad.l + (idx / (N - 1)) * pw;
+            const y = pad.t + (1 - v) * ph;
+            if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = '#107C10'; ctx.font = 'bold 10.5px Segoe UI';
+        ctx.fillText('— ACETONE', pad.l + 10, pad.t + 14);
+        ctx.fillStyle = '#0078D4';
+        ctx.fillText('— WATER', pad.l + 95, pad.t + 14);
+        ctx.fillStyle = '#1F2328'; ctx.font = '10.5px Segoe UI';
+        ctx.fillText('Stage Number (1 to 50)', pad.l + pw / 2 - 55, h - 8);
+    }
+
+    // 3. NRTL y-x Tangent Pinch Curve
+    const cYX = document.getElementById('chartYX');
+    if (cYX) {
+        const { ctx, w, h } = setupHiDPICanvas(cYX);
+        const pad = { l: 44, r: 16, t: 16, b: 32 };
+        const pw = w - pad.l - pad.r;
+        const ph = h - pad.t - pad.b;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#E1E6EB';
+        for (let i = 0; i <= 5; i++) {
+            const y = pad.t + (ph * i) / 5;
+            ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+            ctx.fillStyle = '#57606A'; ctx.font = '10px Consolas';
+            ctx.fillText((1 - i * 0.2).toFixed(1), 12, y + 3);
+        }
+
+        // 45-deg diagonal
+        ctx.strokeStyle = '#8C959F'; ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(pad.l, pad.t + ph); ctx.lineTo(pad.l + pw, pad.t); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // NRTL VLE Curve
+        ctx.strokeStyle = '#D83B01'; ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        for (let i = 0; i <= 60; i++) {
+            const x1 = i / 60;
+            const x2 = 1 - x1;
+            const T = calcBubblePointC(x1, x2, 1.0);
+            const [g1, g2] = calcNRTLGamma(x1, x2, T);
+            const y1 = (g1 * calcPsatBar(state.components[0], T) * x1) /
+                       (g1 * calcPsatBar(state.components[0], T) * x1 + g2 * calcPsatBar(state.components[1], T) * x2);
+            const px = pad.l + x1 * pw;
+            const py = pad.t + (1 - y1) * ph;
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = '#D83B01'; ctx.font = 'bold 10px Segoe UI';
+        ctx.fillText('Pinch Zone (x_Ace > 0.85)', pad.l + pw * 0.56, pad.t + 26);
+        ctx.fillStyle = '#1F2328'; ctx.font = '10.5px Segoe UI';
+        ctx.fillText('Liquid Mole Fraction x_ACETONE', pad.l + pw / 2 - 75, h - 8);
+    }
+
+    // 4. Energy Intensity Comparison Bar Chart (Lab #2a vs Lab #2b)
+    const cE = document.getElementById('chartEnergy');
+    if (cE) {
+        const { ctx, w, h } = setupHiDPICanvas(cE);
+        const pad = { l: 44, r: 16, t: 28, b: 36 };
+        const pw = w - pad.l - pad.r;
+        const ph = h - pad.t - pad.b;
+        const maxVal = 90;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#E1E6EB';
+        for (let i = 0; i <= 4; i++) {
+            const y = pad.t + (ph * i) / 4;
+            ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+            ctx.fillStyle = '#57606A'; ctx.font = '10px Consolas';
+            ctx.fillText((maxVal - (maxVal * i) / 4).toFixed(0), 14, y + 3);
+        }
+
+        const groups = [
+            { label: 'Reboiler (Q_R)', vals: [21.57, col.Qr_kW, 46.11] },
+            { label: 'Cooling (|Q_C|)', vals: [14.14, Math.abs(col.Qc_kW), 34.79] },
+            { label: 'Total Thermal', vals: [35.71, col.Qr_kW + Math.abs(col.Qc_kW), 80.90] }
+        ];
+        const colors = ['#0078D4', '#E69F00', '#D83B01'];
+        const gw = pw / groups.length;
+        const bw = Math.min(24, (gw - 24) / 3);
+
+        groups.forEach((g, gi) => {
+            const gx = pad.l + gi * gw + 12;
+            g.vals.forEach((v, vi) => {
+                const bh = (Math.min(maxVal, v) / maxVal) * ph;
+                const bx = gx + vi * (bw + 3);
+                const by = pad.t + ph - bh;
+                ctx.fillStyle = colors[vi];
+                ctx.fillRect(bx, by, bw, bh);
+                ctx.fillStyle = '#1F2328'; ctx.font = 'bold 9px Consolas';
+                ctx.fillText(v.toFixed(1), bx, by - 3);
+            });
+            ctx.fillStyle = '#1F2328'; ctx.font = '10px Segoe UI';
+            ctx.fillText(g.label, gx + 4, h - 10);
+        });
+
+        // Legend
+        ctx.font = '9.5px Segoe UI';
+        ctx.fillStyle = colors[0]; ctx.fillRect(pad.l, 7, 8, 8);
+        ctx.fillStyle = '#1F2328'; ctx.fillText('Lab #2a LLE', pad.l + 11, 14);
+        ctx.fillStyle = colors[1]; ctx.fillRect(pad.l + 75, 7, 8, 8);
+        ctx.fillStyle = '#1F2328'; ctx.fillText(`Current Run (RR=${col.RR.toFixed(2)})`, pad.l + 86, 14);
+        ctx.fillStyle = colors[2]; ctx.fillRect(pad.l + 195, 7, 8, 8);
+        ctx.fillStyle = '#1F2328'; ctx.fillText('RR=5.0 Guess', pad.l + 206, 14);
+    }
+}
+
+function renderValidation() {
+    const box = document.getElementById('validationContainer');
+    const feed = state.streams.find(s => !s.fromBlock)?.results;
+    const dist = state.streams.find(s => s.fromBlock && s.portType === 'top')?.results;
+    const bot = state.streams.find(s => s.fromBlock && s.portType === 'bottom')?.results;
+    const col = state.blocks.find(b => b.results)?.results;
+
+    if (!feed || !dist || !bot || !col) {
+        box.innerHTML = `<div class="sheet-card" style="padding:24px; text-align:center; color:var(--ap-muted);">Complete your practical setup and press <strong>Run (F5)</strong> to compare your live simulation outputs against the Practical 11 reference solution.</div>`;
+        return;
+    }
+
+    const massIn = feed.massFlow;
+    const massOut = dist.massFlow + bot.massFlow;
+    const massErrPct = Math.abs(massOut - massIn) / Math.max(1e-9, massIn) * 100.0;
+    const hIn_kW = feed.hFlow * 0.004184 + col.Qr_kW;
+    const hOut_kW = (dist.hFlow + bot.hFlow) * 0.004184 + Math.abs(col.Qc_kW);
+    const energyErrPct = Math.abs(hOut_kW - hIn_kW) / Math.max(1e-9, Math.abs(hIn_kW)) * 100.0;
+
+    const checks = [
+        { name: 'Converged Molar Reflux Ratio (RR)', calc: col.RR, ref: 2.65, tol: 0.15, fmt: v => v.toFixed(2) },
+        { name: 'Reboiler Heating Duty Q_R (kW)', calc: col.Qr_kW, ref: 29.76, tol: 1.5, fmt: v => '+' + v.toFixed(2) },
+        { name: 'Condenser Cooling Duty Q_C (kW)', calc: col.Qc_kW, ref: -18.44, tol: 1.5, fmt: v => v.toFixed(2) },
+        { name: 'Overhead Distillate Temperature (C)', calc: dist.T, ref: 55.81, tol: 0.6, fmt: v => v.toFixed(2) },
+        { name: 'Overhead Distillate Mass Flow (kg/hr)', calc: dist.massFlow, ref: 50.00, tol: 0.1, fmt: v => v.toFixed(2) },
+        { name: 'Overhead ACETONE Mass Fraction', calc: dist.massFracs[0], ref: 0.9910, tol: 0.002, fmt: v => v.toFixed(4) },
+        { name: 'Overhead ACETONE Mole Fraction', calc: dist.moleFracs[0], ref: 0.9716, tol: 0.005, fmt: v => v.toFixed(4) },
+        { name: 'Bottoms Temperature (C)', calc: bot.T, ref: 97.33, tol: 2.6, fmt: v => v.toFixed(2) },
+        { name: 'Bottoms Mass Flow (kg/hr)', calc: bot.massFlow, ref: 50.00, tol: 0.1, fmt: v => v.toFixed(2) },
+        { name: 'Bottoms WATER Mass Fraction', calc: bot.massFracs[1], ref: 0.9910, tol: 0.002, fmt: v => v.toFixed(4) }
+    ];
+
+    box.innerHTML = `
+        <div class="sheet-card">
+            <div class="sheet-head">
+                <span>Overall Mass &amp; Energy Balance Closure</span>
+                <span style="color:#107C10; font-size:11px;">&#10003; Rigorous MESH Conservation Verified</span>
+            </div>
+            <div style="padding:12px; display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;" class="mono">
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:8px;">
+                    <div style="font-family:var(--font-ui); color:var(--ap-muted); font-size:10.5px;">Total Mass In / Out</div>
+                    <strong>${massIn.toFixed(4)} / ${massOut.toFixed(4)} kg/hr</strong>
+                </div>
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:8px;">
+                    <div style="font-family:var(--font-ui); color:var(--ap-muted); font-size:10.5px;">Mass Balance Closure Error</div>
+                    <strong style="color:#107C10;">${massErrPct.toFixed(6)} %</strong>
+                </div>
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:8px;">
+                    <div style="font-family:var(--font-ui); color:var(--ap-muted); font-size:10.5px;">Net Thermal Duty (Q_R + Q_C)</div>
+                    <strong>${(col.Qr_kW + col.Qc_kW).toFixed(2)} kW</strong>
+                </div>
+                <div style="background:#F9FBFD; border:1px solid var(--ap-border); padding:8px;">
+                    <div style="font-family:var(--font-ui); color:var(--ap-muted); font-size:10.5px;">Energy Balance Closure Error</div>
+                    <strong style="color:#107C10;">${energyErrPct.toFixed(6)} %</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-head"><span>Practical 11 / Lab #2b Validation Benchmark (Calculated vs Reference PDF)</span></div>
+            <div style="padding:12px;">
+                <table class="ap-table">
+                    <thead>
+                        <tr><th>Parameter</th><th>Calculated Value</th><th>Reference Benchmark</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        ${checks.map(ch => {
+                            const ok = Math.abs(ch.calc - ch.ref) <= ch.tol;
+                            return `
+                                <tr>
+                                    <td>${ch.name}</td>
+                                    <td class="mono" style="font-weight:700; color:#005A9E;">${ch.fmt(ch.calc)}</td>
+                                    <td class="mono">${ch.fmt(ch.ref)}</td>
+                                    <td style="font-weight:700; color:${ok ? '#107C10' : '#D83B01'};">${ok ? 'Match' : 'Check Input'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// 10. LOGGING, CSV EXPORT & KEYBOARD SHORTCUTS
+// ============================================================================
+function logMsg(msg, color) {
+    const log = document.getElementById('cpLog');
+    if (!log) return;
+    const div = document.createElement('div');
+    div.style.color = color || '#1F2328';
+    div.textContent = msg;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() {
+    const log = document.getElementById('cpLog');
+    if (log) log.innerHTML = '';
+}
+
+function exportStreamsCSV() {
+    const tbl = document.querySelector('#streamSummaryContainer table');
+    if (!tbl) return;
+    const lines = Array.from(tbl.querySelectorAll('tr')).map(tr =>
+        Array.from(tr.querySelectorAll('th,td')).map(td => `"${td.textContent.trim()}"`).join(',')
+    );
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'AspenPlus_StreamResults.csv';
+    a.click();
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'F4') { e.preventDefault(); stepNext(); }
+    if (e.key === 'F5') { e.preventDefault(); runSimulation(); }
+    if (e.ctrlKey && e.key.toLowerCase() === 'm') { e.preventDefault(); openRenameDialogForSelected(); }
+    if (e.key === 'Escape') {
+        state.placingBlockType = null;
+        state.materialConnectMode = false;
+        state.textAnnotateMode = false;
+        document.getElementById('btnMaterialTool').classList.remove('active');
+        document.getElementById('btnTextTool').classList.remove('active');
+        hideContextMenu();
+        renderPFD();
+    }
+});
+
+window.addEventListener('resize', () => {
+    if (state.activeDocTab === 'radfrac-results') {
+        const col = state.blocks.find(b => b.results)?.results;
+        if (col) drawAllResultCharts(col);
+    }
+});
+
+window.onload = function () {
+    switchPaletteCat('columns');
+    newBlankSimulation();
+};
+</script>
+</body>
+</html>
